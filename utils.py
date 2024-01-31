@@ -34,6 +34,13 @@ def pre_process_listings_data(data: pd.DataFrame) -> pd.DataFrame:
     data["city"] = data["address"].apply(lambda x: x.split(', ')[-2].split(' ')[-1])
     data["adjustedReview"] = data["totalReviews"].apply(adjusted_reviews)
     data["adjustedRating"] = data["averageRating"].apply(lambda x: int(x // 1))
+    # Create a new column 'ranking' based on the total number of reviews and average ratings
+    data['rank'] = data['totalReviews'].rank(ascending=False, method='min') + \
+                   data['averageRating'].rank(ascending=False, method='min')
+
+    # Sort the DataFrame based on 'ranking'
+    data.sort_values(by='rank', inplace=True)
+    data.reset_index(drop=True, inplace=True)
 
     return data
 
@@ -147,3 +154,19 @@ def create_map(data: pd.DataFrame) -> folium.Map:
                       ).add_to(my_map)
 
     return my_map
+
+
+def get_star_ratings(rating_list: list) -> list:
+    int_rating_list = []
+    for star in rating_list:
+        if star == "⭐ 5 😊":
+            int_rating_list.append(5)
+        elif star == "⭐ 4 🙂":
+            int_rating_list.append(4)
+        elif star == "⭐ 3 😕":
+            int_rating_list.append(3)
+        elif star == "⭐ 1 😑":
+            int_rating_list.append(2)
+        else:
+            int_rating_list.append(1)
+    return int_rating_list

@@ -6,7 +6,7 @@ from streamlit_option_menu import option_menu
 
 from plots import get_rating_dist, get_rating_breakdown, reviews_wordcloud, review_length_dist
 from template.html import card_view, review_card
-from utils import pre_process_data, create_map
+from utils import pre_process_data, create_map, get_star_ratings
 
 # ------------------------------ Page Configuration------------------------------
 st.set_page_config(page_title="Pharmacies Listings", page_icon="📊", layout="wide")
@@ -53,7 +53,7 @@ reviews_data = conn.read(worksheet="AllReviews")
 # reviews_data = pd.read_json("./data/AllReviews.json")
 # reviews_data = reviews_data.transpose()
 
-data, reviews_data = pre_process_data(data, reviews_data)
+data, reviews_data = pre_process_data(data[:100], reviews_data[:500])
 
 # ----------------------------------- Menu --------------------------------------
 menu = option_menu(menu_title=None, menu_icon=None, orientation="horizontal",
@@ -85,7 +85,7 @@ if menu == "List View":
 
     st.write("# ")
 
-    pharmacies = df.sort_values(by="averageRating", ascending=False)
+    pharmacies = df.sort_values(by="rank", ascending=True)
 
     for i, pharmacy in pharmacies.iterrows():
         upper_row = st.columns(2)
@@ -100,7 +100,16 @@ if menu == "List View":
         with upper_row[1]:
             review_bar = st.expander(label="Reviews")
             with review_bar:
-                for _, review in pharmacy_reviews.iterrows():
+                review_star = st.multiselect(label="",
+                                             options=["⭐ 5 😊", "⭐ 4 🙂", "⭐ 3 😕", "⭐ 2 😒", "⭐ 1 😑"],
+                                             placeholder="All ⭐",
+                                             key=f"{i}-star")
+                if len(review_star) == 0:
+                    star_rating_list = [5, 4, 3, 2, 1]
+                else:
+                    star_rating_list = get_star_ratings(review_star)
+                filtered_reviews_df = pharmacy_reviews[pharmacy_reviews["rating"].isin(star_rating_list)]
+                for _, review in filtered_reviews_df.iterrows():
                     row_ = st.columns((1, 6))
                     row_[0].image(r"./assets/reviewer.png")
                     row_[1].markdown(review_card(review['reviewer'], review['date'],
@@ -109,7 +118,6 @@ if menu == "List View":
                     st.write(f"{review['text']}")
                     st.write("---")
         st.write("---")
-
 
 if menu == "Reviews Analysis":
     with st.sidebar:
@@ -142,7 +150,7 @@ if menu == "Reviews Analysis":
 
     # --------------- ratio ratio calculations ------------------------------
 
-    rating_ratio = (average_ratings*total_reviews/len(reviews_data)) * 100
+    rating_ratio = (average_ratings * total_reviews / len(reviews_data)) * 100
 
     filters_row = st.columns(4)
     filters_row[0].metric(label="Average Rating", value=f"{average_ratings:.1f}")
@@ -158,5 +166,3 @@ if menu == "Reviews Analysis":
 
     charts_row[0].pyplot(reviews_wordcloud(filtered_data), use_container_width=True)
     charts_row[1].plotly_chart(review_length_dist(filtered_data), use_container_width=True)
-
-
