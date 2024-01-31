@@ -61,7 +61,7 @@ def main():
     # ----- Menu -----
     menu = option_menu(menu_title=None, menu_icon=None, orientation="horizontal",
                        options=["Pharmacies Map", "List View", "Reviews Analysis"],
-                       icons=["U+F47F", "U+F47F", "U+F47F"])
+                       icons=["U+F47F", ":U+F47F", ":U+F47F"])
 
     # ----- Tab for Map View -----
     if menu == "Pharmacies Map":
