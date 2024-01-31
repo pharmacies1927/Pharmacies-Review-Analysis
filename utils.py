@@ -1,5 +1,5 @@
 import pandas as pd
-from folium import folium
+import folium
 
 from template.html import POPUP
 
