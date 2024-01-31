@@ -168,6 +168,7 @@ def display_list_view(df: pd.DataFrame):
     st.write("# ")
     # sorting listings by 'rank' column
     pharmacies = df.sort_values(['totalReviews', 'averageRating'], ascending=[False, False])
+    pharmacies.reset_index(drop=True, inplace=True)
     # pharmacies = df.sort_values(by="rank", ascending=True)
 
     if len(pharmacies) == 0:
@@ -175,12 +176,13 @@ def display_list_view(df: pd.DataFrame):
         st.info("No Listed Pharmacy found!", icon="🚨")
     else:
         for i, pharmacy in pharmacies.iterrows():
-            display_pharmacy(pharmacy)
+            display_pharmacy(i, pharmacy)
 
 
-def display_pharmacy(pharmacy):
+def display_pharmacy(i, pharmacy):
     """
     function to list pharmacy details in a card view
+    :param i: index/rank of pharmacy
     :param pharmacy: Details of pharmacy
     :return: None
     """
@@ -188,12 +190,14 @@ def display_pharmacy(pharmacy):
     # filtering pharmacy data based on current pharmacy
     pharmacy_reviews = reviews_data[reviews_data.place_Name == pharmacy["name"]]
     with upper_row[0]:
-        row = st.columns((1, 5))
+        row = st.columns((1, 2, 8))
         # card view
+        row[0].write(f"# ")
+        row[0].write(f"### {i+1}")
         # image on left
-        row[0].image(r"./assets/icon-min.png")
+        row[1].image(r"./assets/icon-min.png")
         # info on right
-        row[1].markdown(card_view(pharmacy["name"], pharmacy["address"],
+        row[2].markdown(card_view(pharmacy["name"], pharmacy["address"],
                                   f"{pharmacy['averageRating']:.1f}", pharmacy["totalReviews"],
                                   pharmacy["contact"]),
                         unsafe_allow_html=True)
