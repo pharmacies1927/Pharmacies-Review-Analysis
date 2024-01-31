@@ -129,8 +129,12 @@ def create_map(data: pd.DataFrame) -> folium.Map:
     :param data: The DataFrame containing pharmacy data.
     :return: The Folium map with pharmacy markers.
     """
-    # map_center = [data["latitude"].mean(), data["longitude"].mean()]
-    map_center = [46.9480, 7.4474]
+    if len(data) == 0:
+        return folium.Map(location=[46.9480, 7.4474], zoom_start=8, control_scale=True, prefer_canvas=True, )
+
+    center_point = data[(data["latitude"] == data["latitude"].min())]
+    map_center = [center_point["latitude"], center_point["longitude"]]
+    # map_center = [46.9480, 7.4474]
     my_map = folium.Map(location=map_center, zoom_start=15, control_scale=True, prefer_canvas=True, )
 
     for i, row in data.iterrows():

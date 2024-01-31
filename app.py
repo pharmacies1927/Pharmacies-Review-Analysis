@@ -53,7 +53,7 @@ reviews_data = conn.read(worksheet="AllReviews")
 # reviews_data = pd.read_json("./data/AllReviews.json")
 # reviews_data = reviews_data.transpose()
 
-data, reviews_data = pre_process_data(data, reviews_data)
+data, reviews_data = pre_process_data(data[:25], reviews_data)
 
 
 # ----------------------------------- Main App ----------------------------------
@@ -65,7 +65,7 @@ def main():
 
     # ----- Tab for Map View -----
     if menu == "Pharmacies Map":
-        pharmacies_map = create_map(data)
+        pharmacies_map = map_view()
         st_data = folium_static(pharmacies_map, width=1500, height=650)
 
     # ----- Tab for List View -----
@@ -77,6 +77,40 @@ def main():
         reviews_analysis()
 
 
+def map_view():
+    """
+    Function to customize view of the map tab
+    - Have filters for choosing preferred location.
+    - Map with custom markers, popup and frames for displaying results.
+    :return: Map view
+    """
+    filtered_data = data.copy()
+
+    map_filters = st.columns((1, 2, 1))
+    name = map_filters[0].multiselect(label="Search by Name", options=data["name"].unique(), placeholder="All")
+    if name:
+        filtered_data = filtered_data[(filtered_data["name"].isin(name))]
+    address = map_filters[1].multiselect(label="Address", options=data["address"].unique(), placeholder="All")
+    if address:
+        filtered_data = filtered_data[(filtered_data["address"].isin(address))]
+    city = map_filters[2].multiselect(label="City", options=data["city"].unique(), placeholder="All")
+    if city:
+        filtered_data = filtered_data[(filtered_data["city"].isin(city))]
+    # if len(name) == 0:
+    #     name = data["name"].unique()
+    # if len(address) == 0:
+    #     address = data["address"].unique()
+    # if len(city) == 0:
+    #     city = data["city"].unique()
+    #
+    # filtered_data = data[(data["name"].isin(name))]
+    # filtered_data = filtered_data[(filtered_data["address"].isin(address))]
+    # filtered_data = filtered_data[(filtered_data["city"].isin(city))]
+    pharmacies_map = create_map(filtered_data)
+
+    return pharmacies_map
+
+
 def list_view():
     """
     Function to create a view to list Pharmacies for smooth user interaction
@@ -85,12 +119,13 @@ def list_view():
     - Data filtration based on user selection.
     - Data view in list with pharmacy detail on left and its reviews on right.
     """
-    filters = st.columns(3)
+    filters = st.columns((1, 2, 2, 2))
     stars = filters[0].multiselect(label="Rating", options=[5, 4, 3, 2, 1], placeholder="All")
     reviews = filters[1].multiselect(label="Min. Reviewers",
                                      options=["Up-to 50", "50 to 100", "100-200", "More than 200"],
                                      placeholder="All")
-    city = filters[2].multiselect(label="City", options=data["city"].unique(), placeholder="All")
+    name = filters[2].selectbox(label="Search by Name", options=data["name"].unique())
+    city = filters[3].multiselect(label="City", options=data["city"].unique(), placeholder="All")
 
     if not stars:  # if user chooses 'All'
         stars = [5, 4, 3, 2, 1]
@@ -99,15 +134,16 @@ def list_view():
     if not city:  # IIf selected option is 'All'
         city = data["city"].unique()
 
-    df = filter_data(stars, reviews, city)
+    df = filter_data(stars, reviews, name, city)
     display_list_view(df)
 
 
-def filter_data(stars: list, reviews: list, city: list) -> pd.DataFrame:
+def filter_data(stars: list, reviews: list, name: str, city: list) -> pd.DataFrame:
     """
     Filter data based on provided parameters.
     :param stars: list of values that filtered data should have in ratings columns
     :param reviews: list of values that filtered data should have in review columns
+    :param name: name of the pharmacy
     :param city: list of values that filtered data should have in city columns
     :return: filtered dataframe with values that are in provided lists.
     """
@@ -115,6 +151,8 @@ def filter_data(stars: list, reviews: list, city: list) -> pd.DataFrame:
     df = df[df["adjustedRating"].isin(stars)]
     df = df[df["adjustedReview"].isin(reviews)]
     df = df[df["city"].isin(city)]
+    df = df[df["name"] == name]
+    df.dropna(axis=0, inplace=True)
     return df
 
 
@@ -140,7 +178,7 @@ def display_list_view(df: pd.DataFrame):
 def display_pharmacy(pharmacy):
     """
     function to list pharmacy details in a card view
-    :param pharmacy: Details of pharamcy
+    :param pharmacy: Details of pharmacy
     :return: None
     """
     upper_row = st.columns(2)
@@ -189,6 +227,7 @@ def display_reviews(review_star: list, pharmacy_reviews: pd.DataFrame):
     if len(filtered_reviews_df) == 0:
         st.info("No reviews found!", icon="🚨")
     else:
+        filtered_reviews_df = filtered_reviews_df.sort_values(by="datetime", ascending=False)
         # displaying reviews info one by one
         for _, review in filtered_reviews_df.iterrows():
             row_ = st.columns((1, 6))
@@ -199,7 +238,7 @@ def display_reviews(review_star: list, pharmacy_reviews: pd.DataFrame):
                                          review['rating']),
                              unsafe_allow_html=True)
             # review text on bottom
-            if review["text"]!="nan":
+            if review["text"] != "nan":
                 st.write(f"{review['text']}")
             st.write("---")
 
@@ -299,7 +338,7 @@ def calculate_kpis(filtered_data: pd.DataFrame):
 
 
 def display_kpis(total_reviews: float, average_ratings: int,
-                 yearly_reviews_rate_percentage:float, rating_ratio:float)->None:
+                 yearly_reviews_rate_percentage: float, rating_ratio: float) -> None:
     """
     Function to display KPIs
     :param total_reviews: Total reviews of the selected pharmacy
