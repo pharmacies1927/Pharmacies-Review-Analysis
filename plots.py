@@ -4,7 +4,12 @@ from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
 
-def get_rating_dist(df):
+def get_rating_dist(df: pd.DataFrame) -> go.Figure:
+    """
+    Generate a bar chart to visualize the distribution of total ratings over the years.
+    :param df: The input DataFrame containing review data.
+    :return: A Plotly Figure representing the distribution of total ratings over the years.
+    """
     df.reset_index(inplace=True)
     df = df.groupby("year")["rating"].sum().reset_index()
     fig = go.Figure(
@@ -22,7 +27,12 @@ def get_rating_dist(df):
     return fig
 
 
-def get_rating_breakdown(df):
+def get_rating_breakdown(df: pd.DataFrame) -> go.Figure:
+    """
+    Generate a bar chart to visualize the breakdown of reviews by rating.
+    :param df: The input DataFrame containing review data.
+    :return: A Plotly Figure representing the breakdown of reviews by rating.
+    """
     df = df.groupby("rating")["text"].count().reset_index()
     df.sort_values(by="rating", ascending=True, inplace=True)
     fig = go.Figure(
@@ -40,7 +50,13 @@ def get_rating_breakdown(df):
     return fig
 
 
-def reviews_wordcloud(df):
+def reviews_wordcloud(df: pd.DataFrame) -> plt.figure:
+    """
+    Generate a word cloud to visualize frequent words in a DataFrame of reviews.
+
+    :param df: The input DataFrame containing review data.
+    :return: A matplotlib figure representing the word cloud
+    """
     wordcloud = WordCloud(background_color='white', min_font_size=5).generate(
         ' '.join(df['text']))
 
@@ -54,7 +70,13 @@ def reviews_wordcloud(df):
     return fig
 
 
-def review_length_dist(df):
+def review_length_dist(df: pd.DataFrame) -> go.Figure:
+    """
+    Generate a histogram to visualize the distribution of review lengths in a DataFrame.
+
+    :param df: The input DataFrame containing review data.
+    :return: A Plotly Figure representing the distribution of review lengths.
+    """
     # Calculate the length of each review
     df['review_length'] = df['text'].apply(len)
 
@@ -70,7 +92,16 @@ def review_length_dist(df):
     return fig
 
 
-def update_layout(fig, x_label, y_label, title):
+def update_layout(fig: go.Figure, x_label: str, y_label: str, title: str) -> go.Figure:
+    """
+    Updates the layout of a Plotly figure with specified labels and title.
+
+    :param fig: plotly fig to be updated
+    :param x_label: title for x-axis
+    :param y_label: title for y-axis
+    :param title: title for the plotly fig
+    :return: The updated Plotly figure
+    """
     fig = fig.update_layout(xaxis_title=x_label, yaxis_title=y_label,
                             title=title,
                             hovermode="x unified",

@@ -1,10 +1,29 @@
+from typing import Tuple
+
 import pandas as pd
 import folium
-
 from template.html import POPUP
 
 
-def pre_process_data(data):
+def pre_process_data(data: pd.DataFrame, reviews: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """
+    Pre-processes data related to pharmacy listings and reviews.
+    :param data: DataFrame containing information about pharmacy listings.
+    :param reviews: DataFrame containing reviews data.
+    :return: A tuple containing pre-processed DataFrames for listings and reviews.
+    """
+    data = pre_process_listings_data(data)
+    reviews = pre_process_reviews(reviews)
+    return data, reviews
+
+
+def pre_process_listings_data(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Pre-processes pharmacy listings data.
+    :param data: The input DataFrame containing pharmacy listings data.
+    :return: Processed DataFrame with adjusted column datatypes, filled NaN values,
+    added markerColor based on totalReviews, adjustedReview, and adjustedRating columns.
+    """
     data = data.transpose()
     data.reset_index(inplace=True)
     data = adjust_column_datatypes(data)
@@ -19,7 +38,13 @@ def pre_process_data(data):
     return data
 
 
-def adjusted_reviews(review):
+def adjusted_reviews(review: int) -> str:
+    """
+    Categorizes the number of reviews into different groups based on provided values.
+
+    :param review: The total number of reviews.
+    :return: A string indicating the category of the number of reviews.
+    """
     if review >= 200:
         return "More than 200"
     elif 100 < review <= 200:
@@ -30,7 +55,18 @@ def adjusted_reviews(review):
         return "Up-to 50"
 
 
-def adjust_column_datatypes(df):
+def adjust_column_datatypes(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Adjusts the data types of specified columns in the DataFrame.
+    The function performs the following transformations:
+        - Converts numeric columns ('averageRating', 'latitude', 'longitude', 'totalReviews', 'id') to float,
+          handling errors by coercing to NaN.
+        - Converts the 'createdAt' column to datetime.
+        - Extracts numeric characters from the 'contact' column, ensuring it contains only digits.
+
+    :param df: The input DataFrame.
+    :return: The DataFrame with adjusted column data types.
+    """
     numeric_cols = ['averageRating', 'latitude', 'longitude', 'totalReviews', 'id']
     for column in numeric_cols:
         df[column] = pd.to_numeric(df[column], errors='coerce', downcast='float')
@@ -39,7 +75,20 @@ def adjust_column_datatypes(df):
     return df
 
 
-def pre_process_reviews(data):
+def pre_process_reviews(data: pd.DataFrame) -> pd.DataFrame:
+    """
+    Pre-processes the reviews data by performing the following steps:
+
+        - Transposes the DataFrame.
+        - Resets the index for consistency.
+        - Adjusts column datatypes.
+        - Fills missing values with 0.
+        - Converts the 'datetime' column to a formatted 'date' column.
+        - Sorts the DataFrame by the 'datetime' column in ascending order.
+
+    :param data: The input DataFrame containing reviews data.
+    :return: The pre-processed DataFrame with transformations.
+    """
     data = data.transpose()
     data.reset_index(inplace=True)
     data = adjust_column_datatypes_of_reviews(data)
@@ -49,14 +98,30 @@ def pre_process_reviews(data):
     return data
 
 
-def adjust_column_datatypes_of_reviews(df):
+def adjust_column_datatypes_of_reviews(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Adjusts the data types of columns in a DataFrame related to reviews.
+    This function specifically handles the following columns:
+        - 'datetime': Converts to datetime format.
+        - 'text': Converts to string type.
+        - 'rating': Converts to numeric type with float precision.
+
+    :param df: The input DataFrame containing review data.
+    :return: The DataFrame with adjusted data types.
+    """
     df["datetime"] = pd.to_datetime(df["datetime"])
     df["text"] = df["text"].astype(str)
     df["rating"] = pd.to_numeric(df["rating"], errors='coerce', downcast='float')
     return df
 
 
-def create_map(data):
+def create_map(data: pd.DataFrame) -> folium.Map:
+    """
+    Creates a Folium map with markers for pharmacies based on the provided DataFrame.
+
+    :param data: The DataFrame containing pharmacy data.
+    :return: The Folium map with pharmacy markers.
+    """
     # map_center = [data["latitude"].mean(), data["longitude"].mean()]
     map_center = [46.9480, 7.4474]
     my_map = folium.Map(location=map_center, zoom_start=15, control_scale=True, prefer_canvas=True, )

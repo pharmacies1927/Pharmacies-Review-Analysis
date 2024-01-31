@@ -6,7 +6,7 @@ from streamlit_option_menu import option_menu
 
 from plots import get_rating_dist, get_rating_breakdown, reviews_wordcloud, review_length_dist
 from template.html import card_view, review_card
-from utils import pre_process_data, pre_process_reviews, create_map
+from utils import pre_process_data, create_map
 
 # ------------------------------ Page Configuration------------------------------
 st.set_page_config(page_title="Pharmacies Listings", page_icon="📊", layout="wide")
@@ -49,9 +49,9 @@ st.markdown("""
 # reviews_data = conn.read(worksheet="AllReviews")
 
 data = pd.read_json("./data/Pharmacies.json")
-data = pre_process_data(data)
 reviews_data = pd.read_json("./data/AllReviews.json")
-reviews_data = pre_process_reviews(reviews_data)
+
+data, reviews_data = pre_process_data(data, reviews_data)
 
 # ----------------------------------- Menu --------------------------------------
 menu = option_menu(menu_title=None, menu_icon=None, orientation="horizontal",
