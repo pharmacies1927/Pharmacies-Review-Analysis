@@ -11,6 +11,7 @@ def get_rating_dist(df: pd.DataFrame) -> go.Figure:
     :return: A Plotly Figure representing the distribution of total ratings over the years.
     """
     df.reset_index(inplace=True)
+    df["year"] = df["datetime"].dt.year
     df = df.groupby("year")["rating"].sum().reset_index()
     fig = go.Figure(
         go.Bar(
