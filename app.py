@@ -45,8 +45,8 @@ st.markdown("""
 
 conn = st.connection("gsheets", type=GSheetsConnection)
 
-data = conn.read(worksheet="Pharmacies")
-reviews_data = conn.read(worksheet="AllReviews")
+data = conn.read(spreadsheet="Pharmacies")
+reviews_data = conn.read(spreadsheet="AllReviews")
 
 # data = pd.read_json("./data/Pharmacies.json")
 # data = data.transpose()
