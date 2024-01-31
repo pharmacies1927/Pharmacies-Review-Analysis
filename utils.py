@@ -157,6 +157,12 @@ def create_map(data: pd.DataFrame) -> folium.Map:
 
 
 def get_star_ratings(rating_list: list) -> list:
+    """
+    Function to map customized string representation
+    of ratings to corresponding integer representation
+    :param rating_list: list of customized rating description
+    :return: list of equivalent integer description of star ratings
+    """
     int_rating_list = []
     for star in rating_list:
         if star == "⭐ 5 😊":

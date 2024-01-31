@@ -53,17 +53,38 @@ reviews_data = conn.read(worksheet="AllReviews")
 # reviews_data = pd.read_json("./data/AllReviews.json")
 # reviews_data = reviews_data.transpose()
 
-data, reviews_data = pre_process_data(data[:100], reviews_data[:500])
+data, reviews_data = pre_process_data(data, reviews_data)
 
-# ----------------------------------- Menu --------------------------------------
-menu = option_menu(menu_title=None, menu_icon=None, orientation="horizontal",
-                   options=["Pharmacies Map", "List View", "Reviews Analysis"])
 
-if menu == "Pharmacies Map":
-    pharmacies_map = create_map(data)
-    st_data = folium_static(pharmacies_map, width=1500, height=650)
+# ----------------------------------- Main App ----------------------------------
+def main():
+    # ----- Menu -----
+    menu = option_menu(menu_title=None, menu_icon=None, orientation="horizontal",
+                       options=["Pharmacies Map", "List View", "Reviews Analysis"],
+                       icons=["U+F47F", "U+F47F", "U+F47F"])
 
-if menu == "List View":
+    # ----- Tab for Map View -----
+    if menu == "Pharmacies Map":
+        pharmacies_map = create_map(data)
+        st_data = folium_static(pharmacies_map, width=1500, height=650)
+
+    # ----- Tab for List View -----
+    elif menu == "List View":
+        list_view()
+
+    # ----- Tab for Reviews Analysis -----
+    elif menu == "Reviews Analysis":
+        reviews_analysis()
+
+
+def list_view():
+    """
+    Function to create a view to list Pharmacies for smooth user interaction
+    Functionalities include:
+    - filters for rating, reviews and city.
+    - Data filtration based on user selection.
+    - Data view in list with pharmacy detail on left and its reviews on right.
+    """
     filters = st.columns(3)
     stars = filters[0].multiselect(label="Rating", options=[5, 4, 3, 2, 1], placeholder="All")
     reviews = filters[1].multiselect(label="Min. Reviewers",
@@ -71,58 +92,134 @@ if menu == "List View":
                                      placeholder="All")
     city = filters[2].multiselect(label="City", options=data["city"].unique(), placeholder="All")
 
-    if not stars:
+    if not stars:  # if user chooses 'All'
         stars = [5, 4, 3, 2, 1]
-    if not reviews:
+    if not reviews:  # if user selected 'All'
         reviews = data["adjustedReview"].unique()
-    if not city:
+    if not city:  # IIf selected option is 'All'
         city = data["city"].unique()
 
+    df = filter_data(stars, reviews, city)
+    display_list_view(df)
+
+
+def filter_data(stars: list, reviews: list, city: list) -> pd.DataFrame:
+    """
+    Filter data based on provided parameters.
+    :param stars: list of values that filtered data should have in ratings columns
+    :param reviews: list of values that filtered data should have in review columns
+    :param city: list of values that filtered data should have in city columns
+    :return: filtered dataframe with values that are in provided lists.
+    """
     df = data.copy()
     df = df[df["adjustedRating"].isin(stars)]
     df = df[df["adjustedReview"].isin(reviews)]
     df = df[df["city"].isin(city)]
+    return df
 
+
+def display_list_view(df: pd.DataFrame):
+    """
+    function to iterate over data after sorted to display it on individual rows
+    :param df: dataframe of pharmacies data
+    :return: None
+    """
     st.write("# ")
-
+    # sorting listings by 'rank' column
     pharmacies = df.sort_values(by="rank", ascending=True)
 
-    for i, pharmacy in pharmacies.iterrows():
-        upper_row = st.columns(2)
-        pharmacy_reviews = reviews_data[reviews_data.place_Name == pharmacy["name"]]
-        with upper_row[0]:
-            row = st.columns((1, 5))
-            row[0].image(r"./assets/icon-min.png")
-            row[1].markdown(card_view(pharmacy["name"], pharmacy["address"],
-                                      f"{pharmacy['averageRating']:.1f}", pharmacy["totalReviews"],
-                                      pharmacy["contact"]),
-                            unsafe_allow_html=True)
-        with upper_row[1]:
-            review_bar = st.expander(label="Reviews")
-            with review_bar:
-                review_star = st.multiselect(label="",
-                                             options=["⭐ 5 😊", "⭐ 4 🙂", "⭐ 3 😕", "⭐ 2 😒", "⭐ 1 😑"],
-                                             placeholder="All ⭐",
-                                             key=f"{i}-star")
-                if len(review_star) == 0:
-                    star_rating_list = [5, 4, 3, 2, 1]
-                else:
-                    star_rating_list = get_star_ratings(review_star)
-                filtered_reviews_df = pharmacy_reviews[pharmacy_reviews["rating"].isin(star_rating_list)]
-                for _, review in filtered_reviews_df.iterrows():
-                    row_ = st.columns((1, 6))
-                    row_[0].image(r"./assets/reviewer.png")
-                    row_[1].markdown(review_card(review['reviewer'], review['date'],
-                                                 review['rating']),
-                                     unsafe_allow_html=True)
-                    st.write(f"{review['text']}")
-                    st.write("---")
-        st.write("---")
+    if len(pharmacies) == 0:
+        # if there is no pharmacy after filtering
+        st.info("No Listed Pharmacy found!", icon="🚨")
+    else:
+        for i, pharmacy in pharmacies.iterrows():
+            display_pharmacy(pharmacy)
 
-if menu == "Reviews Analysis":
+
+def display_pharmacy(pharmacy):
+    """
+    function to list pharmacy details in a card view
+    :param pharmacy: Details of pharamcy
+    :return: None
+    """
+    upper_row = st.columns(2)
+    # filtering pharmacy data based on current pharmacy
+    pharmacy_reviews = reviews_data[reviews_data.place_Name == pharmacy["name"]]
+    with upper_row[0]:
+        row = st.columns((1, 5))
+        # card view
+        # image on left
+        row[0].image(r"./assets/icon-min.png")
+        # info on right
+        row[1].markdown(card_view(pharmacy["name"], pharmacy["address"],
+                                  f"{pharmacy['averageRating']:.1f}", pharmacy["totalReviews"],
+                                  pharmacy["contact"]),
+                        unsafe_allow_html=True)
+    with upper_row[1]:
+        # Pharmacy Reviews Tab
+        review_bar = st.expander(label=f"Reviews ({len(pharmacy_reviews)})")
+        with review_bar:
+            # filter to choose results based on star rating
+            review_star = st.multiselect(label="",
+                                         options=["⭐ 5 😊", "⭐ 4 🙂", "⭐ 3 😕", "⭐ 2 😒", "⭐ 1 😑"],
+                                         placeholder="All ⭐",
+                                         key=f"{pharmacy['id']}-star")
+            # reviews display
+            display_reviews(review_star, pharmacy_reviews)
+    st.write("---")
+
+
+def display_reviews(review_star: list, pharmacy_reviews: pd.DataFrame):
+    """
+    Function to display reviews in customized html cards on individual rows.
+    :param review_star: list containing filtered rating.
+    :param pharmacy_reviews: dataframe containing pharmacies reviews.
+    :return:
+    """
+    if len(review_star) == 0:  # if user selects 'All'
+        star_rating_list = [5, 4, 3, 2, 1]
+    else:
+        star_rating_list = get_star_ratings(review_star)  # get mapped equivalent list
+
+    # filtering data based on user selected ratings
+    filtered_reviews_df = pharmacy_reviews[pharmacy_reviews["rating"].isin(star_rating_list)]
+
+    # if no reviews found for current rating selection
+    if len(filtered_reviews_df) == 0:
+        st.info("No reviews found!", icon="🚨")
+    else:
+        # displaying reviews info one by one
+        for _, review in filtered_reviews_df.iterrows():
+            row_ = st.columns((1, 6))
+            # reviewer image on left
+            row_[0].image(r"./assets/reviewer.png")
+            # review detail on right
+            row_[1].markdown(review_card(review['reviewer'], review['date'],
+                                         review['rating']),
+                             unsafe_allow_html=True)
+            # review text on bottom
+            if review["text"]!="nan":
+                st.write(f"{review['text']}")
+            st.write("---")
+
+
+def reviews_analysis():
+    """
+    Function for viewing streamlit components under Review Analysis Tab.
+    Functionalities:
+     - Filters for choosing pharmacy by name, and choosing time range for analysis.
+     - KPIs for Total Reviews, Avg. Rating, Review Frequency and Yearly Review Rate.
+     - Wordcloud to analyze frequent occurring words in reviews.
+     - Plotly figure for Review length analysis.
+     - Plotly charts for analysing Reviews' Yearly Distribution and NUmber of Reviews per Rating.
+    :return: Streamlit frame/view
+    """
     with st.sidebar:
+        # for spacing
         st.write("# ")
         st.write("# ")
+
+        # filter to use pharmacy by name
         pharmacy = st.selectbox(label="Pharmacy", options=reviews_data["place_Name"].unique())
         # Slider for period selection
         reviews_data['datetime'] = reviews_data['datetime'].dt.date
@@ -132,37 +229,90 @@ if menu == "Reviews Analysis":
             format="MM/DD/YYYY"
         )
 
+    # data filtering based on user selection
+    filtered_data = filter_reviews_data(pharmacy, start_date, end_date)
+    # displaying analysis results
+    display_reviews_analysis(filtered_data)
+
+
+def filter_reviews_data(pharmacy, start_date, end_date) -> pd.DataFrame:
+    """
+    Function to filter data based on user selection.
+    :param pharmacy: user selected pharmacy name.
+    :param start_date: user selected start period date.
+    :param end_date: user selected period end date
+    :return: dataframe filtered based on selected pharmacy name and date range.
+    """
     filtered_data = reviews_data[
         (reviews_data['datetime'] >= start_date) & (reviews_data['datetime'] <= end_date) &
-        (reviews_data['place_Name'] == pharmacy)]
+        (reviews_data['place_Name'] == pharmacy)
+        ]
+    # extracting only required columns for further analysis
     filtered_data = filtered_data[["datetime", "place_Name", "rating", "reviewer", "text"]]
+    # adjusting datetime format of specified column
     filtered_data["datetime"] = pd.to_datetime(filtered_data["datetime"])
+    return filtered_data
 
-    # --------------------------------- KPIs --------------------------------------------------
 
+def display_reviews_analysis(filtered_data: pd.DataFrame) -> None:
+    """
+    Function to display reviews analytics.
+    :param filtered_data: filtered data based on user preferences.
+    :return: None
+    """
+
+    # getting calculated values for KPIs
+    total_reviews, average_ratings, yearly_reviews_rate_percentage, rating_ratio = calculate_kpis(filtered_data)
+    # displaying KPIs in top row
+    display_kpis(total_reviews, average_ratings, yearly_reviews_rate_percentage, rating_ratio)
+
+    charts_row = st.columns(2)
+    # Chart to display Reviews' Yearly Distribution
+    charts_row[0].plotly_chart(get_rating_dist(filtered_data), use_container_width=True)
+    # Chart to display Reviews per Rating
+    charts_row[1].plotly_chart(get_rating_breakdown(filtered_data), use_container_width=True)
+    # Wordcloud figure to analyze frequently occurring words in review text
+    charts_row[0].pyplot(reviews_wordcloud(filtered_data), use_container_width=True)
+    # Histogram for analyzing reviews' text length
+    charts_row[1].plotly_chart(review_length_dist(filtered_data), use_container_width=True)
+
+
+def calculate_kpis(filtered_data: pd.DataFrame):
+    """
+    Function to calculate KPI values
+    :param filtered_data: filtered data based on user preferences
+    :return: Tuple(int, float, float, float)
+    """
+    # total reviews of a pharmacy
     total_reviews = len(filtered_data)
+    # average rating for a pharmacy
     average_ratings = filtered_data['rating'].mean()
-
-    # --------------- yearly ratio calculations --------------------------------------
-    filtered_data["year"] = filtered_data["datetime"].dt.year
-    total_years = filtered_data['year'].nunique()
+    # total number of unique years
+    total_years = filtered_data['datetime'].dt.year.nunique()
+    # yearly review rate/frequency
     yearly_reviews_rate_percentage = (total_reviews / total_years)
-
-    # --------------- ratio ratio calculations ------------------------------
-
+    # rating ratio
     rating_ratio = (average_ratings * total_reviews / len(reviews_data)) * 100
 
+    return total_reviews, average_ratings, yearly_reviews_rate_percentage, rating_ratio
+
+
+def display_kpis(total_reviews: float, average_ratings: int,
+                 yearly_reviews_rate_percentage:float, rating_ratio:float)->None:
+    """
+    Function to display KPIs
+    :param total_reviews: Total reviews of the selected pharmacy
+    :param average_ratings: Average rating for the selected pharmacy
+    :param yearly_reviews_rate_percentage: Yearly review rate/frequency
+    :param rating_ratio:  Rating ratio
+    :return:
+    """
     filters_row = st.columns(4)
     filters_row[0].metric(label="Average Rating", value=f"{average_ratings:.1f}")
     filters_row[1].metric(label="Total Reviews", value=f"{total_reviews}")
     filters_row[2].metric(label="Review Frequency", value=f"{rating_ratio :.2f} %")
     filters_row[3].metric(label="Yearly Reviews Rate", value=f"{yearly_reviews_rate_percentage:.2f} %")
 
-    # --------------------------------- visuals --------------------------------------------------
 
-    charts_row = st.columns(2)
-    charts_row[0].plotly_chart(get_rating_dist(filtered_data), use_container_width=True)
-    charts_row[1].plotly_chart(get_rating_breakdown(filtered_data), use_container_width=True)
-
-    charts_row[0].pyplot(reviews_wordcloud(filtered_data), use_container_width=True)
-    charts_row[1].plotly_chart(review_length_dist(filtered_data), use_container_width=True)
+if __name__ == "__main__":
+    main()
