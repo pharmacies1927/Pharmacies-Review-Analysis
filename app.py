@@ -4,6 +4,7 @@ from streamlit_folium import folium_static
 from streamlit_gsheets import GSheetsConnection
 from streamlit_option_menu import option_menu
 
+from plots import get_rating_dist, get_rating_breakdown, reviews_wordcloud, review_length_dist
 from template.html import card_view, review_card
 from utils import pre_process_data, pre_process_reviews, create_map
 
@@ -106,3 +107,54 @@ if menu == "List View":
                     st.write(f"{review['text']}")
                     st.write("---")
         st.write("---")
+
+
+if menu == "Reviews Analysis":
+    with st.sidebar:
+        st.write("# ")
+        st.write("# ")
+        pharmacy = st.selectbox(label="Pharmacy", options=reviews_data["place_Name"].unique())
+        # Slider for period selection
+        reviews_data['datetime'] = reviews_data['datetime'].dt.date
+        start_date, end_date = st.slider(
+            "Select the period",
+            value=(reviews_data['datetime'].min(), reviews_data['datetime'].max()),
+            format="MM/DD/YYYY"
+        )
+
+    filtered_data = reviews_data[
+        (reviews_data['datetime'] >= start_date) & (reviews_data['datetime'] <= end_date) &
+        (reviews_data['place_Name'] == pharmacy)]
+    filtered_data = filtered_data[["datetime", "place_Name", "rating", "reviewer", "text"]]
+    filtered_data["datetime"] = pd.to_datetime(filtered_data["datetime"])
+
+    # --------------------------------- KPIs --------------------------------------------------
+
+    total_reviews = len(filtered_data)
+    average_ratings = filtered_data['rating'].mean()
+
+    # --------------- yearly ratio calculations --------------------------------------
+    filtered_data["year"] = filtered_data["datetime"].dt.year
+    total_years = filtered_data['year'].nunique()
+    yearly_reviews_rate_percentage = (total_reviews / total_years)
+
+    # --------------- ratio ratio calculations ------------------------------
+
+    rating_ratio = (average_ratings*total_reviews/len(reviews_data)) * 100
+
+    filters_row = st.columns(4)
+    filters_row[0].metric(label="Average Rating", value=f"{average_ratings:.1f}")
+    filters_row[1].metric(label="Total Reviews", value=f"{total_reviews}")
+    filters_row[2].metric(label="Review Frequency", value=f"{rating_ratio :.2f} %")
+    filters_row[3].metric(label="Yearly Reviews Rate", value=f"{yearly_reviews_rate_percentage:.2f} %")
+
+    # --------------------------------- visuals --------------------------------------------------
+
+    charts_row = st.columns(2)
+    charts_row[0].plotly_chart(get_rating_dist(filtered_data), use_container_width=True)
+    charts_row[1].plotly_chart(get_rating_breakdown(filtered_data), use_container_width=True)
+
+    charts_row[0].pyplot(reviews_wordcloud(filtered_data), use_container_width=True)
+    charts_row[1].plotly_chart(review_length_dist(filtered_data), use_container_width=True)
+
+
