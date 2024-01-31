@@ -126,7 +126,8 @@ def display_list_view(df: pd.DataFrame):
     """
     st.write("# ")
     # sorting listings by 'rank' column
-    pharmacies = df.sort_values(by="rank", ascending=True)
+    pharmacies = df.sort(['totalReviews', 'averageRating'], ascending=[False, False])
+    # pharmacies = df.sort_values(by="rank", ascending=True)
 
     if len(pharmacies) == 0:
         # if there is no pharmacy after filtering
