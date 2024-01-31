@@ -43,13 +43,15 @@ st.markdown("""
 
 # ----------------------------------- Data Loading ------------------------------
 
-# conn = st.connection("gsheets", type=GSheetsConnection)
-#
-# data = conn.read(worksheet="Pharmacies")
-# reviews_data = conn.read(worksheet="AllReviews")
+conn = st.connection("gsheets", type=GSheetsConnection)
 
-data = pd.read_json("./data/Pharmacies.json")
-reviews_data = pd.read_json("./data/AllReviews.json")
+data = conn.read(worksheet="Pharmacies")
+reviews_data = conn.read(worksheet="AllReviews")
+
+# data = pd.read_json("./data/Pharmacies.json")
+# data = data.transpose()
+# reviews_data = pd.read_json("./data/AllReviews.json")
+# reviews_data = reviews_data.transpose()
 
 data, reviews_data = pre_process_data(data, reviews_data)
 

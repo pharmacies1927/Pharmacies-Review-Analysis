@@ -24,7 +24,7 @@ def pre_process_listings_data(data: pd.DataFrame) -> pd.DataFrame:
     :return: Processed DataFrame with adjusted column datatypes, filled NaN values,
     added markerColor based on totalReviews, adjustedReview, and adjustedRating columns.
     """
-    data = data.transpose()
+    # data = data.transpose()
     data.reset_index(inplace=True)
     data = adjust_column_datatypes(data)
     data.fillna(0, inplace=True)
@@ -89,7 +89,7 @@ def pre_process_reviews(data: pd.DataFrame) -> pd.DataFrame:
     :param data: The input DataFrame containing reviews data.
     :return: The pre-processed DataFrame with transformations.
     """
-    data = data.transpose()
+    # data = data.transpose()
     data.reset_index(inplace=True)
     data = adjust_column_datatypes_of_reviews(data)
     data.fillna(0, inplace=True)
