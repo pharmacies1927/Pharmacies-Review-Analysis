@@ -29,7 +29,7 @@ st.markdown("""
     }
     [data-testid="stExpanderDetails"] {
         overflow: scroll;
-        height: 400px;
+        height: 450px;
     }
     [data-testid="stImage"] {
         border-radius: 50%;
