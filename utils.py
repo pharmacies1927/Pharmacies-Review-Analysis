@@ -1,6 +1,8 @@
 import pandas as pd
 from folium import folium
 
+from template.html import POPUP
+
 
 def pre_process_data(data):
     data = data.transpose()
@@ -60,7 +62,7 @@ def create_map(data):
     my_map = folium.Map(location=map_center, zoom_start=15, control_scale=True, prefer_canvas=True, )
 
     for i, row in data.iterrows():
-        iframe = folium.IFrame(html.format(
+        iframe = folium.IFrame(POPUP.format(
             str(row["name"]),
             str(row["address"]),
             str(round(row["averageRating"], 1)),
