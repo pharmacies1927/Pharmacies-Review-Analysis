@@ -53,7 +53,7 @@ reviews_data = conn.read(worksheet="AllReviews")
 # reviews_data = pd.read_json("./data/AllReviews.json")
 # reviews_data = reviews_data.transpose()
 
-data, reviews_data = pre_process_data(data[:25], reviews_data)
+data, reviews_data = pre_process_data(data, reviews_data)
 
 
 # ----------------------------------- Main App ----------------------------------
@@ -120,13 +120,13 @@ def list_view():
     - Data view in list with pharmacy detail on left and its reviews on right.
     """
     filters = st.columns((1, 2, 2, 2))
-    cities = data["name"].unique()
-    cities.insert(0, "All")
+    names = list(data["name"].unique())
+    names.insert(0, "All")
     stars = filters[0].multiselect(label="Rating", options=[5, 4, 3, 2, 1], placeholder="All")
     reviews = filters[1].multiselect(label="Min. Reviewers",
                                      options=["Up-to 50", "50 to 100", "100-200", "More than 200"],
                                      placeholder="All")
-    name = filters[2].selectbox(label="Search by Name", options=cities)
+    name = filters[2].selectbox(label="Search by Name", options=names)
     city = filters[3].multiselect(label="City", options=data["city"].unique(), placeholder="All")
 
     if not stars:  # if user chooses 'All'
@@ -152,9 +152,9 @@ def filter_data(stars: list, reviews: list, name: str, city: list) -> pd.DataFra
     df = data.copy()
     df = df[df["adjustedRating"].isin(stars)]
     df = df[df["adjustedReview"].isin(reviews)]
-    if city != "All":
-        df = df[df["city"].isin(city)]
-    df = df[df["name"] == name]
+    df = df[df["city"].isin(city)]
+    if name != "All":
+        df = df[df["name"] == name]
     df.dropna(axis=0, inplace=True)
     return df
 
