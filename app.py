@@ -161,7 +161,7 @@ def display_pharmacy(pharmacy):
         review_bar = st.expander(label=f"Reviews ({len(pharmacy_reviews)})")
         with review_bar:
             # filter to choose results based on star rating
-            review_star = st.multiselect(label="",
+            review_star = st.multiselect(label=" ",
                                          options=["⭐ 5 😊", "⭐ 4 🙂", "⭐ 3 😕", "⭐ 2 😒", "⭐ 1 😑"],
                                          placeholder="All ⭐",
                                          key=f"{pharmacy['id']}-star")
