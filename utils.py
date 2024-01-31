@@ -1,4 +1,5 @@
 import pandas as pd
+from folium import folium
 
 
 def pre_process_data(data):
@@ -51,3 +52,31 @@ def adjust_column_datatypes_of_reviews(df):
     df["text"] = df["text"].astype(str)
     df["rating"] = pd.to_numeric(df["rating"], errors='coerce', downcast='float')
     return df
+
+
+def create_map(data):
+    # map_center = [data["latitude"].mean(), data["longitude"].mean()]
+    map_center = [46.9480, 7.4474]
+    my_map = folium.Map(location=map_center, zoom_start=15, control_scale=True, prefer_canvas=True, )
+
+    for i, row in data.iterrows():
+        iframe = folium.IFrame(html.format(
+            str(row["name"]),
+            str(row["address"]),
+            str(round(row["averageRating"], 1)),
+            str(row["totalReviews"]),
+            row["contact"]
+        ), width=300, height=250)
+
+        popup = folium.Popup(iframe, min_width=150, max_width=300)
+        # Add each row to the map
+        folium.Marker(location=[row['latitude'], row['longitude']],
+                      tooltip=row["name"],
+                      # icon=folium.features.CustomIcon(icon_image=r"img0.png", icon_size=(70, 70)),
+                      icon=folium.Icon(color=row['markerColor'],
+                                       icon="medkit",
+                                       prefix='fa'),
+                      popup=popup,
+                      ).add_to(my_map)
+
+    return my_map
