@@ -134,7 +134,7 @@ def create_map(data: pd.DataFrame) -> folium.Map:
 
     map_center = [data["latitude"].mean(), data["longitude"].mean()]
     # map_center = [46.9480, 7.4474]
-    my_map = folium.Map(location=map_center, zoom_start=15, control_scale=True, prefer_canvas=True, )
+    my_map = folium.Map(location=map_center, zoom_start=10, control_scale=True, prefer_canvas=True, )
 
     for i, row in data.iterrows():
         iframe = folium.IFrame(POPUP.format(
