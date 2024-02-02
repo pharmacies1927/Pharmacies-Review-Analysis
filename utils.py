@@ -7,6 +7,9 @@ from textblob_de import TextBlobDE
 from textblob_fr import PatternAnalyzer
 from textblob import TextBlob
 import langid
+import nltk
+
+nltk.download('punkt')
 
 
 def pre_process_data(data: pd.DataFrame, reviews: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
