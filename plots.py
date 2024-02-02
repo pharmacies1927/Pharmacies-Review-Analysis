@@ -2,6 +2,7 @@ import json
 
 import pandas as pd
 import plotly.graph_objects as go
+import streamlit
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
@@ -215,8 +216,8 @@ def pharmacies_choropleth(df):
     )
     fig.update_layout(
         mapbox_style="carto-positron",
-        mapbox_zoom=8,
-        mapbox_center={"lat": 46.8, "lon": 8.2},
+        mapbox_zoom=7,
+        mapbox_center={"lat": 46.9, "lon": 7.44},
         height=600,
         margin={"r": 0, "t": 0, "l": 0, "b": 0},
         title="Geographical Distribution of Ratings",
@@ -236,6 +237,7 @@ def top_performing_places(df):
     df = df.dropna(subset=["averageRating"])
     df.sort_values(by="averageRating", ascending=True, inplace=True)
     top_places = df.head(20)
+    streamlit.dataframe(top_places)
     fig = go.Figure(
         go.Bar(
             y=top_places["name"],
