@@ -243,7 +243,7 @@ def top_performing_places(df):
         )
     )
 
-    fig = update_layout(fig, "Rating", "Pharmacy", "Top Rated Pharmacies")
+    fig = update_layout(fig, "Rating", "Pharmacy", None)
     fig.update_layout(height=700)
 
     return fig

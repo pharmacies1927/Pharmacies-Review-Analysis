@@ -61,7 +61,7 @@ data, reviews_data = pre_process_data(data, reviews_data)
 def main():
     # ----- Menu -----
     menu = option_menu(menu_title=None, menu_icon=None, orientation="horizontal",
-                       options=["Pharmacies Map", "List View", "Reviews Analysis", "Market Analysis"],
+                       options=["Pharmacies Map", "List View", "Reviews Analytics", "Market Analysis"],
                        )
 
     # ----- Tab for Map View -----
@@ -391,6 +391,7 @@ def market_analysis_page():
     cols = st.columns(2)
     cols[0].write("#### Geographical Distribution of Ratings")
     cols[0].plotly_chart(pharmacies_choropleth(data), use_container_width=True)
+    cols[1].write("#### Top Rated Pharmacies")
     cols[1].plotly_chart(top_performing_places(data), use_container_width=True)
 
 
