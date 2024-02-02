@@ -166,7 +166,7 @@ def rating_breakdown_pie(df: pd.DataFrame) -> go.Figure:
             labels=df["Rating-Formatted"],
             values=df["text"],
             hole=0.3,
-            category_orders={"Rating-Formatted": ["⭐ 5 😊", "⭐ 4 🙂", "⭐ 3 😕", "⭐ 2 😒", "⭐ 1 😑"]}
+            sort=False
         )
     )
     fig.update_traces(hoverinfo='label+value', textinfo='percent', textfont_size=15,
@@ -215,7 +215,7 @@ def pharmacies_choropleth(df):
     )
     fig.update_layout(
         mapbox_style="carto-positron",
-        mapbox_zoom=6.6,
+        mapbox_zoom=4,
         mapbox_center={"lat": 46.8, "lon": 8.2},
         height=600,
         margin={"r": 0, "t": 0, "l": 0, "b": 0},
