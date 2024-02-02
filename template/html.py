@@ -1,6 +1,5 @@
 # ----------------------- CUSTOMIZED HTML COMPONENTS ------------------------------
 
-
 POPUP = """
     <div style="background-color: #ecf0f1;border-radius: 10px;padding: 20px;">
         <div style="align-items:center;display: flex;">
