@@ -165,7 +165,8 @@ def rating_breakdown_pie(df: pd.DataFrame) -> go.Figure:
         go.Pie(
             labels=df["Rating-Formatted"],
             values=df["text"],
-            hole=0.3
+            hole=0.3,
+            category_orders={"Rating-Formatted": ["⭐ 5 😊", "⭐ 4 🙂", "⭐ 3 😕", "⭐ 2 😒", "⭐ 1 😑"]}
         )
     )
     fig.update_traces(hoverinfo='label+value', textinfo='percent', textfont_size=15,
@@ -232,6 +233,7 @@ def pharmacies_choropleth(df):
 
 
 def top_performing_places(df):
+    df = df.dropna(subset=["averageRating"])
     df.sort_values(by="averageRating", ascending=True, inplace=True)
     top_places = df.head(30)
     fig = go.Figure(
