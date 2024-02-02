@@ -215,7 +215,7 @@ def pharmacies_choropleth(df):
     )
     fig.update_layout(
         mapbox_style="carto-positron",
-        mapbox_zoom=4,
+        mapbox_zoom=8,
         mapbox_center={"lat": 46.8, "lon": 8.2},
         height=600,
         margin={"r": 0, "t": 0, "l": 0, "b": 0},
@@ -235,7 +235,7 @@ def pharmacies_choropleth(df):
 def top_performing_places(df):
     df = df.dropna(subset=["averageRating"])
     df.sort_values(by="averageRating", ascending=True, inplace=True)
-    top_places = df.head(30)
+    top_places = df.head(20)
     fig = go.Figure(
         go.Bar(
             y=top_places["name"],
