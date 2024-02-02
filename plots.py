@@ -1,7 +1,13 @@
+import json
+
 import pandas as pd
 import plotly.graph_objects as go
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
+
+from utils import insert_sentiment_scores
+
+COLORS = ["#fdfcdc", "#0081a7", "#00afb9", "#fed9b7", "#f07167"]
 
 
 def get_rating_dist(df: pd.DataFrame) -> go.Figure:
@@ -113,4 +119,131 @@ def update_layout(fig: go.Figure, x_label: str, y_label: str, title: str) -> go.
                                 font_family="Rockwell"
                             )
                             )
+    return fig
+
+
+def average_rating_overtime(df):
+    df['year'] = df['datetime'].dt.year
+    df['quarter'] = df['datetime'].dt.quarter
+
+    # Calculate average rating for each year and quarter
+    avg_rating = df.groupby(['year', 'quarter'])['rating'].mean().reset_index()
+
+    # Create a Plotly Go figure
+    fig = go.Figure()
+
+    # Add a bar trace for each quarter
+    for quarter in range(1, 5):
+        quarter_data = avg_rating[avg_rating['quarter'] == quarter]
+        fig.add_trace(go.Bar(
+            x=quarter_data['year'],
+            y=quarter_data['rating'],
+            name=f'Quarter {quarter}',
+            marker=dict(color=COLORS[quarter])
+        ))
+
+    # Customize the layout
+    fig.update_layout(barmode='group', legend=dict(title='Quarter'))
+
+    fig = update_layout(fig, "Time", "Average Rating", "Average Rating overtime")
+    return fig
+
+
+def rating_breakdown_pie(df: pd.DataFrame) -> go.Figure:
+    """
+    Generate a bar chart to visualize the breakdown of reviews by rating.
+    :param df: The input DataFrame containing review data.
+    :return: A Plotly Figure representing the breakdown of reviews by rating.
+    """
+    df = df.groupby("rating")["text"].count().reset_index()
+    df["rating"] = df["rating"].astype(int)
+    df["Rating-Formatted"] = df["rating"].map({
+        5: "⭐ 5 😊", 4: "⭐ 4 🙂", 3: "⭐ 3 😕", 2: "⭐ 2 😒", 1: "⭐ 1 😑"
+    })
+    df.sort_values(by="rating", ascending=True, inplace=True)
+    fig = go.Figure(
+        go.Pie(
+            labels=df["Rating-Formatted"],
+            values=df["text"],
+            hole=0.3
+        )
+    )
+    fig.update_traces(hoverinfo='label+value', textinfo='percent', textfont_size=15,
+                      marker=dict(colors=COLORS))
+    fig = update_layout(fig, "Rating", "Review Count", "Rating Distribution")
+
+    return fig
+
+
+def sentiment_score_overtime(df):
+    df = insert_sentiment_scores(df)
+    fig = go.Figure()
+    fig.add_trace(
+        go.Scatter(
+            x=df["datetime"],
+            y=df["sentiment_score"],
+            name="Sentiment Score",
+            mode="markers",
+            marker=dict(color="#84a59d", size=20),
+        )
+    )
+    fig.add_hrect(y0=0.05, y1=1.05, line_width=0, fillcolor="#57cc99", opacity=0.2)
+    fig.add_hrect(y0=-0.05, y1=-1.05, line_width=0, fillcolor="#ef233c", opacity=0.2)
+
+    fig = update_layout(fig, "Time", "Sentiment Score", "Sentiment Analysis overtime")
+
+    return fig
+
+
+def pharmacies_choropleth(df):
+    # LOAD geojson FILE
+    with open("data/georef-switzerland-kanton.geojson") as response:
+        geo = json.load(response)
+
+    # Geographic Map
+    fig = go.Figure(
+        go.Choroplethmapbox(
+            geojson=geo,
+            locations=df["city"],
+            featureidkey="properties.kan_name",
+            z=df["averageRating"],
+            colorscale="sunsetdark",
+            marker_opacity=0.8,
+            marker_line_width=1,
+        )
+    )
+    fig.update_layout(
+        mapbox_style="carto-positron",
+        mapbox_zoom=6.6,
+        mapbox_center={"lat": 46.8, "lon": 8.2},
+        height=600,
+        margin={"r": 0, "t": 0, "l": 0, "b": 0},
+        title="Geographical Distribution of Ratings",
+        hovermode="x unified",
+        hoverlabel=dict(
+            bgcolor="white",
+            font_color="black",
+            font_size=16,
+            font_family="Rockwell"
+        )
+    )
+
+    return fig
+
+
+def top_performing_places(df):
+    df.sort_values(by="averageRating", ascending=True, inplace=True)
+    top_places = df.head(30)
+    fig = go.Figure(
+        go.Bar(
+            y=top_places["name"],
+            x=top_places["averageRating"],
+            orientation="h",
+            marker=dict(color="#2a9d8f")
+        )
+    )
+
+    fig = update_layout(fig, "Rating", "Pharmacy", "Top Rated Pharmacies")
+    fig.update_layout(height=700)
+
     return fig

@@ -4,7 +4,8 @@ from streamlit_folium import folium_static
 from streamlit_gsheets import GSheetsConnection
 from streamlit_option_menu import option_menu
 
-from plots import get_rating_dist, get_rating_breakdown, reviews_wordcloud, review_length_dist
+from plots import get_rating_dist, get_rating_breakdown, reviews_wordcloud, review_length_dist, average_rating_overtime, \
+    rating_breakdown_pie, sentiment_score_overtime, pharmacies_choropleth, top_performing_places
 from template.html import card_view, review_card
 from utils import pre_process_data, create_map, get_star_ratings
 
@@ -47,7 +48,7 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 
 data = conn.read(worksheet="Pharmacies")
 reviews_data = conn.read(worksheet="AllReviews")
-
+#
 # data = pd.read_json("./data/Pharmacies.json")
 # data = data.transpose()
 # reviews_data = pd.read_json("./data/AllReviews.json")
@@ -60,8 +61,8 @@ data, reviews_data = pre_process_data(data, reviews_data)
 def main():
     # ----- Menu -----
     menu = option_menu(menu_title=None, menu_icon=None, orientation="horizontal",
-                       options=["Pharmacies Map", "List View", "Reviews Analysis"],
-                       icons=["U+F47F", ":U+F47F", ":U+F47F"])
+                       options=["Pharmacies Map", "List View", "Reviews Analysis", "Market Analysis"],
+                       )
 
     # ----- Tab for Map View -----
     if menu == "Pharmacies Map":
@@ -73,8 +74,13 @@ def main():
         list_view()
 
     # ----- Tab for Reviews Analysis -----
-    elif menu == "Reviews Analysis":
-        reviews_analysis()
+    elif menu == "Reviews Analytics":
+        # reviews_analysis()
+        review_analytics_page()
+
+    # ----- Tab for Pharmaceutical Market Analysis -----
+    elif menu == "Market Analysis":
+        market_analysis_page()
 
 
 def map_view():
@@ -193,7 +199,7 @@ def display_pharmacy(i, pharmacy):
         row = st.columns((1, 2, 8))
         # card view
         row[0].write(f"# ")
-        row[0].write(f"### {i+1}")
+        row[0].write(f"### {i + 1}")
         # image on left
         row[1].image(r"./assets/icon-min.png")
         # info on right
@@ -359,6 +365,33 @@ def display_kpis(total_reviews: float, average_ratings: int,
     filters_row[1].metric(label="Total Reviews", value=f"{total_reviews}")
     filters_row[2].metric(label="Review Frequency", value=f"{rating_ratio :.2f} %")
     filters_row[3].metric(label="Yearly Reviews Rate", value=f"{yearly_reviews_rate_percentage:.2f} %")
+
+
+def review_analytics_page():
+    filter_kpi_row = st.columns((4, 1, 2, 2, 2, 2))
+    place = filter_kpi_row[0].selectbox("Select Pharmacy", options=reviews_data["place_Name"].unique())
+
+    filtered_data = reviews_data[(reviews_data['place_Name'] == place)]
+
+    total_reviews, average_ratings, yearly_reviews_rate_percentage, rating_ratio = calculate_kpis(filtered_data)
+    filter_kpi_row[2].metric(label="Average Rating", value=f"{average_ratings:.1f}")
+    filter_kpi_row[3].metric(label="Total Reviews", value=f"{total_reviews}")
+    filter_kpi_row[4].metric(label="Review Frequency", value=f"{rating_ratio :.2f} %")
+    filter_kpi_row[5].metric(label="Yearly Reviews Rate", value=f"{yearly_reviews_rate_percentage:.2f} %")
+
+    charts_row = st.columns((4, 3))
+    charts_row[0].plotly_chart(average_rating_overtime(filtered_data), use_container_width=True)
+    charts_row[1].plotly_chart(rating_breakdown_pie(filtered_data), use_container_width=True)
+
+    charts_row[0].plotly_chart(sentiment_score_overtime(filtered_data), use_container_width=True)
+    charts_row[1].pyplot(reviews_wordcloud(filtered_data), use_container_width=True)
+
+
+def market_analysis_page():
+    cols = st.columns(2)
+    cols[0].write("#### Geographical Distribution of Ratings")
+    cols[0].plotly_chart(pharmacies_choropleth(data), use_container_width=True)
+    cols[1].plotly_chart(top_performing_places(data), use_container_width=True)
 
 
 if __name__ == "__main__":

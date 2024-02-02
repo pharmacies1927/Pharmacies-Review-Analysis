@@ -3,6 +3,10 @@ from typing import Tuple
 import pandas as pd
 import folium
 from template.html import POPUP
+from textblob_de import TextBlobDE
+from textblob_fr import PatternAnalyzer
+from textblob import TextBlob
+import langid
 
 
 def pre_process_data(data: pd.DataFrame, reviews: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
@@ -34,12 +38,12 @@ def pre_process_listings_data(data: pd.DataFrame) -> pd.DataFrame:
     data["city"] = data["address"].apply(lambda x: x.split(', ')[-2].split(' ')[-1])
     data["adjustedReview"] = data["totalReviews"].apply(adjusted_reviews)
     data["adjustedRating"] = data["averageRating"].apply(lambda x: int(x // 1))
-    # Create a new column 'ranking' based on the total number of reviews and average ratings
-    data['rank'] = data['totalReviews'].rank(ascending=False, method='min') + \
-                   data['averageRating'].rank(ascending=False, method='min')
+    # # Create a new column 'ranking' based on the total number of reviews and average ratings
+    # data['rank'] = data['totalReviews'].rank(ascending=False, method='min') + \
+    #                data['averageRating'].rank(ascending=False, method='min')
 
     # Sort the DataFrame based on 'ranking'
-    data.sort_values(by='rank', inplace=True)
+    data.sort_values(by='totalReviews', inplace=True)
     data.reset_index(drop=True, inplace=True)
 
     return data
@@ -179,3 +183,39 @@ def get_star_ratings(rating_list: list) -> list:
         else:
             int_rating_list.append(1)
     return int_rating_list
+
+
+def calculate_sentiment_score(row):
+    text = row['text']
+    lang = row['language']
+
+    if lang in ['en', 'de', 'fr']:
+        if lang == 'en':
+            return TextBlob(text).sentiment.polarity
+        elif lang == 'de':
+            return TextBlobDE(text).sentiment.polarity
+        elif lang == 'fr':
+            return TextBlob(text, analyzer=PatternAnalyzer()).sentiment[0]
+    if len(text) == 0 or lang not in ['en', 'de', 'fr']:
+        rating = row['rating']
+        if rating == 5:
+            return 1
+        elif rating == 4:
+            return 0.5
+        elif rating == 3:
+            return 0
+        elif rating == 2:
+            return -0.5
+        elif rating == 1:
+            return -1
+    return None
+
+
+def insert_sentiment_scores(df):
+    # Add a new column for language identification
+    df['language'] = df['text'].apply(lambda x: langid.classify(x)[0])
+
+    # Add a new column for sentiment scores using the calculate_sentiment_score function
+    df['sentiment_score'] = df.apply(calculate_sentiment_score, axis=1)
+
+    return df
