@@ -235,19 +235,20 @@ def pharmacies_choropleth(df):
 
 def top_performing_places(df):
     df = df.dropna(subset=["averageRating"])
-    df.sort_values(by="averageRating", ascending=False, inplace=True)
+    df["rank"] = (df["averageRating"] / df["totalReviews"])*100
+    df.sort_values(by="rank", ascending=False, inplace=True)
     top_places = df.head(30)
     fig = go.Figure(
         go.Bar(
             y=top_places["name"],
-            x=top_places["averageRating"],
+            x=top_places["rank"],
             orientation="h",
             marker=dict(color="#2a9d8f")
         )
     )
 
     fig.update_layout(height=700,
-                      xaxis_title="Average Rating",
+                      xaxis_title="Rank",
                       yaxis_title="Pharmacy",
                       hovermode="x unified",
                       hoverlabel=dict(
