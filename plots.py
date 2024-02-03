@@ -241,7 +241,7 @@ def top_performing_places(df):
     }).reset_index()
     df["rank"] = (df["averageRating"] / df["totalReviews"]) * 100
     df.sort_values(by="rank", ascending=True, inplace=True)
-    print(df.rank.max())
+    print(df["rank"].max())
     top_places = df.head(30)
     fig = go.Figure(
         go.Bar(
