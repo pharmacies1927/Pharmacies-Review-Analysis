@@ -239,23 +239,31 @@ def top_performing_places(df):
         "averageRating": "mean",
         "totalReviews": "sum"
     }).reset_index()
+    thresh = df["totalReviews"].mean()
+    df = df[df["totalReviews"] >= thresh]
     df["rank"] = (df["averageRating"] / df["totalReviews"]) * 100
-    df.sort_values(by="rank", ascending=True, inplace=True)
-    print(df["rank"].max())
+    df.sort_values(by="rank", ascending=False, inplace=True)
     top_places = df.head(30)
+    top_places["SatisfactionLevel"] = top_places["rank"].apply(lambda x: f"{round(100 - x, 2):.2f}%")
+
     fig = go.Figure(
         go.Bar(
             y=top_places["name"],
             x=top_places["rank"],
+            marker=dict(color="#2a9d8f"),
             orientation="h",
-            marker=dict(color="#2a9d8f")
+            text=top_places["SatisfactionLevel"],
+            hovertext=top_places["averageRating"].astype(str) +
+                      " stars(" + top_places["totalReviews"].astype(str) +
+                      ") | Satisfaction Level= " + top_places["SatisfactionLevel"]
         )
     )
 
     fig.update_layout(height=700,
                       xaxis_title="Rank",
                       yaxis_title="Pharmacy",
-                      hovermode="x unified",
+                      yaxis=dict(autorange="reversed"),
+                      # hovermode="x unified",
                       hoverlabel=dict(
                           bgcolor="white",
                           font_color="black",
