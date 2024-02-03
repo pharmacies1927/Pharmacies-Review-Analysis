@@ -235,8 +235,13 @@ def pharmacies_choropleth(df):
 
 def top_performing_places(df):
     df = df.dropna(subset=["averageRating"])
-    df["rank"] = (df["averageRating"] / df["totalReviews"])*100
+    df = df.groupby("name").agg({
+        "averageRating": "mean",
+        "totalReviews": "sum"
+    }).reset_index()
+    df["rank"] = (df["averageRating"] / df["totalReviews"]) * 100
     df.sort_values(by="rank", ascending=True, inplace=True)
+    print(df.rank.max())
     top_places = df.head(30)
     fig = go.Figure(
         go.Bar(
