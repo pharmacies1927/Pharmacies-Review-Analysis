@@ -85,7 +85,6 @@ def main():
         market_analysis_page()
 
 
-@st.cache_resource
 def map_view():
     """
     Function to customize view of the map tab
@@ -111,7 +110,6 @@ def map_view():
     return pharmacies_map
 
 
-@st.cache_resource
 def list_view():
     """
     Function to create a view to list Pharmacies for smooth user interaction
@@ -141,6 +139,7 @@ def list_view():
     display_list_view(df)
 
 
+@st.cache_data
 def filter_data(stars: list, reviews: list, name: str, city: list) -> pd.DataFrame:
     """
     Filter data based on provided parameters.
@@ -160,6 +159,7 @@ def filter_data(stars: list, reviews: list, name: str, city: list) -> pd.DataFra
     return df
 
 
+@st.cache_data
 def display_list_view(df: pd.DataFrame):
     """
     function to iterate over data after sorted to display it on individual rows
@@ -251,7 +251,6 @@ def display_reviews(review_star: list, pharmacy_reviews: pd.DataFrame):
             st.write("---")
 
 
-@st.cache_resource
 def reviews_analysis():
     """
     Function for viewing streamlit components under Review Analysis Tab.
@@ -284,6 +283,7 @@ def reviews_analysis():
     display_reviews_analysis(filtered_data)
 
 
+st.cache_data
 def filter_reviews_data(pharmacy, start_date, end_date) -> pd.DataFrame:
     """
     Function to filter data based on user selection.
