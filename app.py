@@ -85,6 +85,7 @@ def main():
         market_analysis_page()
 
 
+@st.cache_resource
 def map_view():
     """
     Function to customize view of the map tab
@@ -110,6 +111,7 @@ def map_view():
     return pharmacies_map
 
 
+@st.cache_resource
 def list_view():
     """
     Function to create a view to list Pharmacies for smooth user interaction
@@ -249,6 +251,7 @@ def display_reviews(review_star: list, pharmacy_reviews: pd.DataFrame):
             st.write("---")
 
 
+@st.cache_resource
 def reviews_analysis():
     """
     Function for viewing streamlit components under Review Analysis Tab.
@@ -382,6 +385,7 @@ def review_analytics_page():
     st.plotly_chart(average_rating_wrt_month_year(filtered_data), use_container_width=True)
 
 
+@st.cache_resource
 def market_analysis_page():
     cols = st.columns(2)
     cols[0].write("#### Geographical Distribution of Ratings")
