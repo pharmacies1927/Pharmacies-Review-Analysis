@@ -2,13 +2,14 @@ import json
 
 import pandas as pd
 import plotly.graph_objects as go
-import streamlit
 from matplotlib import pyplot as plt
 from wordcloud import WordCloud
 
 from utils import insert_sentiment_scores
 
-COLORS = ["#fdfcdc", "#0081a7", "#00afb9", "#fed9b7", "#f07167"]
+COLORS = ["#0081a7", "#00afb9", "#f07167", "#e9c46a",
+          "#264653", "#f4a261", "#e76f51", "#ef233c", "#fed9b7"
+          "#f6bd60", "#84a59d", "#f95738", "#fdfcdc", ]
 
 
 def get_rating_dist(df: pd.DataFrame) -> go.Figure:
@@ -147,6 +148,37 @@ def average_rating_overtime(df):
     fig.update_layout(barmode='group', legend=dict(title='Quarter'))
 
     fig = update_layout(fig, "Time", "Average Rating", "Average Rating overtime")
+    return fig
+
+
+def average_rating_wrt_month_year(df):
+    df['year'] = df['datetime'].dt.year
+    df['month'] = df['datetime'].dt.month_name()
+    df['month_num'] = df['datetime'].dt.month
+    df['month_year'] = df['datetime'].dt.strftime("%b %Y")
+
+    # Calculate average rating for each year and month
+    avg_rating = df.groupby(['year', 'month_num', 'month_year'])['rating'].mean().reset_index()
+
+    # avg_rating
+    # Create a Plotly go figure
+    fig = go.Figure()
+
+    years = sorted(list(avg_rating['year'].unique()))
+    # Add a bar trace for each quarter
+    for year in years:
+        year_data = avg_rating[avg_rating['year'] == year]
+        year_data.sort_values(by='month_num', inplace=True)
+        fig.add_trace(go.Bar(
+            x=year_data['month_year'],
+            y=year_data['rating'],
+            name=f'{year}',
+        ))
+
+    # Customize the layout
+    fig.update_layout(barmode='group', legend=dict(title='Year'))
+
+    fig = update_layout(fig, "Time", "Average Rating", "Average Rating overtime w.r.t Month-Year")
     return fig
 
 

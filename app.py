@@ -5,7 +5,8 @@ from streamlit_gsheets import GSheetsConnection
 from streamlit_option_menu import option_menu
 
 from plots import get_rating_dist, get_rating_breakdown, reviews_wordcloud, review_length_dist, average_rating_overtime, \
-    rating_breakdown_pie, sentiment_score_overtime, pharmacies_choropleth, top_performing_places
+    rating_breakdown_pie, sentiment_score_overtime, pharmacies_choropleth, top_performing_places, \
+    average_rating_wrt_month_year
 from template.html import card_view, review_card
 from utils import pre_process_data, create_map, get_star_ratings
 
@@ -48,7 +49,7 @@ conn = st.connection("gsheets", type=GSheetsConnection)
 
 data = conn.read(worksheet="Pharmacies")
 reviews_data = conn.read(worksheet="AllReviews")
-#
+
 # data = pd.read_json("./data/Pharmacies.json")
 # data = data.transpose()
 # reviews_data = pd.read_json("./data/AllReviews.json")
@@ -62,6 +63,7 @@ def main():
     # ----- Menu -----
     menu = option_menu(menu_title=None, menu_icon=None, orientation="horizontal",
                        options=["Pharmacies Map", "List View", "Reviews Analytics", "Market Analysis"],
+                       icons=['map', 'view-list', 'bar-chart', 'graph-up-arrow']
                        )
 
     # ----- Tab for Map View -----
@@ -102,16 +104,7 @@ def map_view():
     city = map_filters[2].multiselect(label="City", options=data["city"].unique(), placeholder="All")
     if city:
         filtered_data = filtered_data[(filtered_data["city"].isin(city))]
-    # if len(name) == 0:
-    #     name = data["name"].unique()
-    # if len(address) == 0:
-    #     address = data["address"].unique()
-    # if len(city) == 0:
-    #     city = data["city"].unique()
-    #
-    # filtered_data = data[(data["name"].isin(name))]
-    # filtered_data = filtered_data[(filtered_data["address"].isin(address))]
-    # filtered_data = filtered_data[(filtered_data["city"].isin(city))]
+
     pharmacies_map = create_map(filtered_data)
 
     return pharmacies_map
@@ -385,6 +378,8 @@ def review_analytics_page():
 
     charts_row[0].plotly_chart(sentiment_score_overtime(filtered_data), use_container_width=True)
     charts_row[1].pyplot(reviews_wordcloud(filtered_data), use_container_width=True)
+
+    st.plotly_chart(average_rating_wrt_month_year(filtered_data), use_container_width=True)
 
 
 def market_analysis_page():
