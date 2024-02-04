@@ -13,7 +13,7 @@ import streamlit as st
 nltk.download('punkt')
 
 
-@st.cache_data(suppress_st_warning=True)
+@st.cache_data
 def pre_process_data(data: pd.DataFrame, reviews: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
     """
     Pre-processes data related to pharmacy listings and reviews.
@@ -131,7 +131,7 @@ def adjust_column_datatypes_of_reviews(df: pd.DataFrame) -> pd.DataFrame:
     return df
 
 
-@st.cache_data(suppress_st_warning=True)
+@st.cache_data
 def create_map(data: pd.DataFrame) -> folium.Map:
     """
     Creates a Folium map with markers for pharmacies based on the provided DataFrame.
@@ -191,7 +191,7 @@ def get_star_ratings(rating_list: list) -> list:
     return int_rating_list
 
 
-@st.cache_data(suppress_st_warning=True)
+@st.cache_data
 def calculate_sentiment_score(row):
     text = row['text']
     lang = row['language']
@@ -218,7 +218,7 @@ def calculate_sentiment_score(row):
     return None
 
 
-@st.cache_data(suppress_st_warning=True)
+@st.cache_data
 def insert_sentiment_scores(df):
     # Add a new column for language identification
     df['language'] = df['text'].apply(lambda x: langid.classify(x)[0])

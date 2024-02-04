@@ -44,7 +44,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ----------------------------------- Data Loading ------------------------------
-
 conn = st.connection("gsheets", type=GSheetsConnection)
 
 data = conn.read(worksheet="Pharmacies")
