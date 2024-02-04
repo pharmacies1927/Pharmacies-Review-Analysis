@@ -138,7 +138,7 @@ def list_view():
     display_list_view(df)
 
 
-@st.cache_data(suppress_st_warning=True)
+@st.cache_data
 def filter_data(stars: list, reviews: list, name: str, city: list) -> pd.DataFrame:
     """
     Filter data based on provided parameters.
@@ -158,7 +158,7 @@ def filter_data(stars: list, reviews: list, name: str, city: list) -> pd.DataFra
     return df
 
 
-@st.cache_data(suppress_st_warning=True)
+@st.cache_data
 def display_list_view(df: pd.DataFrame):
     """
     function to iterate over data after sorted to display it on individual rows
@@ -282,7 +282,7 @@ def reviews_analysis():
     display_reviews_analysis(filtered_data)
 
 
-@st.cache_data(suppress_st_warning=True)
+@st.cache_data
 def filter_reviews_data(pharmacy, start_date, end_date) -> pd.DataFrame:
     """
     Function to filter data based on user selection.
@@ -384,7 +384,7 @@ def review_analytics_page():
     st.plotly_chart(average_rating_wrt_month_year(filtered_data), use_container_width=True)
 
 
-@st.cache_resource(suppress_st_warning=True)
+@st.cache_resource
 def market_analysis_page():
     cols = st.columns(2)
     cols[0].write("#### Geographical Distribution of Ratings")
