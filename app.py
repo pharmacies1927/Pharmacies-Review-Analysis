@@ -4,7 +4,7 @@ from streamlit_folium import folium_static
 from streamlit_gsheets import GSheetsConnection
 from streamlit_option_menu import option_menu
 
-from plots import get_rating_dist, get_rating_breakdown, reviews_wordcloud, review_length_dist, average_rating_overtime, \
+from plots import reviews_wordcloud, average_rating_overtime, \
     rating_breakdown_pie, sentiment_score_overtime, pharmacies_choropleth, top_performing_places, \
     average_rating_wrt_month_year
 from template.html import card_view, review_card
@@ -76,7 +76,6 @@ def main():
 
     # ----- Tab for Reviews Analysis -----
     elif menu == "Reviews Analytics":
-        # reviews_analysis()
         review_analytics_page()
 
     # ----- Tab for Pharmaceutical Market Analysis -----
@@ -138,7 +137,6 @@ def list_view():
     display_list_view(df)
 
 
-@st.cache_data
 def filter_data(stars: list, reviews: list, name: str, city: list) -> pd.DataFrame:
     """
     Filter data based on provided parameters.
@@ -158,7 +156,6 @@ def filter_data(stars: list, reviews: list, name: str, city: list) -> pd.DataFra
     return df
 
 
-@st.cache_data
 def display_list_view(df: pd.DataFrame):
     """
     function to iterate over data after sorted to display it on individual rows
@@ -179,7 +176,7 @@ def display_list_view(df: pd.DataFrame):
             display_pharmacy(i, pharmacy)
 
 
-def display_pharmacy(i, pharmacy):
+def display_pharmacy(i: int, pharmacy: pd.Series):
     """
     function to list pharmacy details in a card view
     :param i: index/rank of pharmacy
@@ -250,81 +247,6 @@ def display_reviews(review_star: list, pharmacy_reviews: pd.DataFrame):
             st.write("---")
 
 
-def reviews_analysis():
-    """
-    Function for viewing streamlit components under Review Analysis Tab.
-    Functionalities:
-     - Filters for choosing pharmacy by name, and choosing time range for analysis.
-     - KPIs for Total Reviews, Avg. Rating, Review Frequency and Yearly Review Rate.
-     - Wordcloud to analyze frequent occurring words in reviews.
-     - Plotly figure for Review length analysis.
-     - Plotly charts for analysing Reviews' Yearly Distribution and NUmber of Reviews per Rating.
-    :return: Streamlit frame/view
-    """
-    with st.sidebar:
-        # for spacing
-        st.write("# ")
-        st.write("# ")
-
-        # filter to use pharmacy by name
-        pharmacy = st.selectbox(label="Pharmacy", options=reviews_data["place_Name"].unique())
-        # Slider for period selection
-        reviews_data['datetime'] = reviews_data['datetime'].dt.date
-        start_date, end_date = st.slider(
-            "Select the period",
-            value=(reviews_data['datetime'].min(), reviews_data['datetime'].max()),
-            format="MM/DD/YYYY"
-        )
-
-    # data filtering based on user selection
-    filtered_data = filter_reviews_data(pharmacy, start_date, end_date)
-    # displaying analysis results
-    display_reviews_analysis(filtered_data)
-
-
-@st.cache_data
-def filter_reviews_data(pharmacy, start_date, end_date) -> pd.DataFrame:
-    """
-    Function to filter data based on user selection.
-    :param pharmacy: user selected pharmacy name.
-    :param start_date: user selected start period date.
-    :param end_date: user selected period end date
-    :return: dataframe filtered based on selected pharmacy name and date range.
-    """
-    filtered_data = reviews_data[
-        (reviews_data['datetime'] >= start_date) & (reviews_data['datetime'] <= end_date) &
-        (reviews_data['place_Name'] == pharmacy)
-        ]
-    # extracting only required columns for further analysis
-    filtered_data = filtered_data[["datetime", "place_Name", "rating", "reviewer", "text"]]
-    # adjusting datetime format of specified column
-    filtered_data["datetime"] = pd.to_datetime(filtered_data["datetime"])
-    return filtered_data
-
-
-def display_reviews_analysis(filtered_data: pd.DataFrame) -> None:
-    """
-    Function to display reviews analytics.
-    :param filtered_data: filtered data based on user preferences.
-    :return: None
-    """
-
-    # getting calculated values for KPIs
-    total_reviews, average_ratings, yearly_reviews_rate_percentage, rating_ratio = calculate_kpis(filtered_data)
-    # displaying KPIs in top row
-    display_kpis(total_reviews, average_ratings, yearly_reviews_rate_percentage, rating_ratio)
-
-    charts_row = st.columns(2)
-    # Chart to display Reviews' Yearly Distribution
-    charts_row[0].plotly_chart(get_rating_dist(filtered_data), use_container_width=True)
-    # Chart to display Reviews per Rating
-    charts_row[1].plotly_chart(get_rating_breakdown(filtered_data), use_container_width=True)
-    # Wordcloud figure to analyze frequently occurring words in review text
-    charts_row[0].pyplot(reviews_wordcloud(filtered_data), use_container_width=True)
-    # Histogram for analyzing reviews' text length
-    charts_row[1].plotly_chart(review_length_dist(filtered_data), use_container_width=True)
-
-
 def calculate_kpis(filtered_data: pd.DataFrame):
     """
     Function to calculate KPI values
@@ -345,47 +267,65 @@ def calculate_kpis(filtered_data: pd.DataFrame):
     return total_reviews, average_ratings, yearly_reviews_rate_percentage, rating_ratio
 
 
-def display_kpis(total_reviews: float, average_ratings: int,
-                 yearly_reviews_rate_percentage: float, rating_ratio: float) -> None:
+def display_reviews_analysis(filtered_data: pd.DataFrame) -> None:
     """
-    Function to display KPIs
-    :param total_reviews: Total reviews of the selected pharmacy
-    :param average_ratings: Average rating for the selected pharmacy
-    :param yearly_reviews_rate_percentage: Yearly review rate/frequency
-    :param rating_ratio:  Rating ratio
-    :return:
+    Function to display reviews analytics.
+    :param filtered_data: filtered data based on user preferences.
+    :return: None
     """
-    filters_row = st.columns(4)
-    filters_row[0].metric(label="Average Rating", value=f"{average_ratings:.1f}")
-    filters_row[1].metric(label="Total Reviews", value=f"{total_reviews}")
-    filters_row[2].metric(label="Review Frequency", value=f"{rating_ratio :.2f} %")
-    filters_row[3].metric(label="Yearly Reviews Rate", value=f"{yearly_reviews_rate_percentage:.2f} %")
+
+    charts_row = st.columns((4, 3))
+    # Chart to display Reviews Distribution w.r.t Quarter-Year
+    charts_row[0].plotly_chart(average_rating_overtime(filtered_data), use_container_width=True)
+    # Chart to display Reviews per Rating
+    charts_row[1].plotly_chart(rating_breakdown_pie(filtered_data), use_container_width=True)
+
+    # scatter plot to display sentiment score over the time
+    charts_row[0].plotly_chart(sentiment_score_overtime(filtered_data), use_container_width=True)
+    # Wordcloud figure to analyze frequently occurring words in review text
+    charts_row[1].pyplot(reviews_wordcloud(filtered_data), use_container_width=True)
+
+    # chart to display the varying rating over the time
+    st.plotly_chart(average_rating_wrt_month_year(filtered_data), use_container_width=True)
 
 
 def review_analytics_page():
+    """
+    Function to show filter, display KPIs and analytics for a pharmacy
+    Functionalities:
+     - Filters for choosing pharmacy by name.
+     - KPIs for Total Reviews, Avg. Rating, Review Frequency and Yearly Review Rate.
+     - Wordcloud to analyze frequent occurring words in reviews.
+     - Plotly bar chart for analyzing average reviews w.r.t Quarters for every year.
+     - Plotly Scatter chart to analyze sentiment score over the time.
+     - Plotly Pie Chart to get distribution of review per rating.
+    :return: Streamlit frame/view
+    """
     filter_kpi_row = st.columns((4, 1, 2, 2, 2, 2))
     place = filter_kpi_row[0].selectbox("Select Pharmacy", options=reviews_data["place_Name"].unique())
 
     filtered_data = reviews_data[(reviews_data['place_Name'] == place)]
 
     total_reviews, average_ratings, yearly_reviews_rate_percentage, rating_ratio = calculate_kpis(filtered_data)
+    # Average rating for the selected pharmacy
     filter_kpi_row[2].metric(label="Average Rating", value=f"{average_ratings:.1f}")
+    # Total reviews of the selected pharmacy
     filter_kpi_row[3].metric(label="Total Reviews", value=f"{total_reviews}")
+    # Rating ratio
     filter_kpi_row[4].metric(label="Review Frequency", value=f"{rating_ratio :.2f} %")
+    # Yearly review rate/frequency
     filter_kpi_row[5].metric(label="Yearly Reviews Rate", value=f"{yearly_reviews_rate_percentage:.2f} %")
 
-    charts_row = st.columns((4, 3))
-    charts_row[0].plotly_chart(average_rating_overtime(filtered_data), use_container_width=True)
-    charts_row[1].plotly_chart(rating_breakdown_pie(filtered_data), use_container_width=True)
-
-    charts_row[0].plotly_chart(sentiment_score_overtime(filtered_data), use_container_width=True)
-    charts_row[1].pyplot(reviews_wordcloud(filtered_data), use_container_width=True)
-
-    st.plotly_chart(average_rating_wrt_month_year(filtered_data), use_container_width=True)
+    # calling function to display analytics charts based on selected place
+    display_reviews_analysis(filtered_data)
 
 
 @st.cache_resource
 def market_analysis_page():
+    """
+    Function to create view for the 'Market Analysis' tab
+    :return: Analytics charts
+    """
     cols = st.columns(2)
     cols[0].write("#### Geographical Distribution of Ratings")
     cols[0].plotly_chart(pharmacies_choropleth(data), use_container_width=True)

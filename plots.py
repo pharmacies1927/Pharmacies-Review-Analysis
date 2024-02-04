@@ -12,95 +12,6 @@ COLORS = ["#0081a7", "#00afb9", "#f07167", "#e9c46a",
           "#f6bd60", "#84a59d", "#f95738", "#fdfcdc", ]
 
 
-def get_rating_dist(df: pd.DataFrame) -> go.Figure:
-    """
-    Generate a bar chart to visualize the distribution of total ratings over the years.
-    :param df: The input DataFrame containing review data.
-    :return: A Plotly Figure representing the distribution of total ratings over the years.
-    """
-    df.reset_index(inplace=True)
-    df["year"] = df["datetime"].dt.year
-    df = df.groupby("year")["rating"].sum().reset_index()
-    fig = go.Figure(
-        go.Bar(
-            x=df["year"],
-            y=df["rating"],
-            name="Total Rating",
-            marker=dict(color="#264653"),
-            text=df["rating"],
-            hovertext=df["rating"].astype(str) + " Reviews in Year " + df["year"].astype(str)
-        )
-    )
-    fig = update_layout(fig, "Year", "Total Ratings", "Reviews' Yearly Distribution")
-
-    return fig
-
-
-def get_rating_breakdown(df: pd.DataFrame) -> go.Figure:
-    """
-    Generate a bar chart to visualize the breakdown of reviews by rating.
-    :param df: The input DataFrame containing review data.
-    :return: A Plotly Figure representing the breakdown of reviews by rating.
-    """
-    df = df.groupby("rating")["text"].count().reset_index()
-    df.sort_values(by="rating", ascending=True, inplace=True)
-    fig = go.Figure(
-        go.Bar(
-            x=df["rating"],
-            y=df["text"],
-            name="Reviews Count",
-            marker=dict(color="#2a9d8f"),
-            text=df["text"],
-            hovertext=df["text"].astype(str) + " Reviews with Ratings of " + df["rating"].astype(str) + " stars"
-        )
-    )
-    fig = update_layout(fig, "Rating", "Review Count", "Reviews' per Rating")
-
-    return fig
-
-
-def reviews_wordcloud(df: pd.DataFrame) -> plt.figure:
-    """
-    Generate a word cloud to visualize frequent words in a DataFrame of reviews.
-
-    :param df: The input DataFrame containing review data.
-    :return: A matplotlib figure representing the word cloud
-    """
-    wordcloud = WordCloud(background_color='white', min_font_size=5).generate(
-        ' '.join(df['text']))
-
-    # Convert the word cloud to an image
-    fig = plt.figure(facecolor=None)
-    plt.imshow(wordcloud, interpolation="bilinear")
-    plt.axis("off")
-    plt.tight_layout(pad=10)
-    plt.title("Frequent Words in Reviews")
-
-    return fig
-
-
-def review_length_dist(df: pd.DataFrame) -> go.Figure:
-    """
-    Generate a histogram to visualize the distribution of review lengths in a DataFrame.
-
-    :param df: The input DataFrame containing review data.
-    :return: A Plotly Figure representing the distribution of review lengths.
-    """
-    # Calculate the length of each review
-    df['review_length'] = df['text'].apply(len)
-
-    fig = go.Figure(
-        go.Histogram(
-            x=df["review_length"],
-            name="Review Length",
-            marker=dict(color="#003049"),
-            hovertemplate='%{y} Reviews with length %{x} words<extra></extra>',
-        )
-    )
-    fig = update_layout(fig, "Review Length", "Number of Reviews", "Distribution of Review Lengths")
-    return fig
-
-
 def update_layout(fig: go.Figure, x_label: str, y_label: str, title: str) -> go.Figure:
     """
     Updates the layout of a Plotly figure with specified labels and title.
@@ -124,7 +35,34 @@ def update_layout(fig: go.Figure, x_label: str, y_label: str, title: str) -> go.
     return fig
 
 
+def reviews_wordcloud(df: pd.DataFrame) -> plt.figure:
+    """
+    Generate a word cloud to visualize frequent words in a DataFrame of reviews.
+
+    :param df: The input DataFrame containing review data.
+    :return: A matplotlib figure representing the word cloud
+    """
+    wordcloud = WordCloud(background_color='white', min_font_size=5).generate(
+        ' '.join(df['text']))
+
+    # Convert the word cloud to an image
+    fig = plt.figure(facecolor=None)
+    plt.imshow(wordcloud, interpolation="bilinear")
+    plt.axis("off")
+    plt.tight_layout(pad=10)
+    plt.title("Frequent Words in Reviews")
+
+    return fig
+
+
 def average_rating_overtime(df):
+    """
+    Function to plot Bar Chart to visualize average rating
+    w.r.t Quarters for each year
+    :param df: The input DataFrame containing review data.
+    :return: A Plotly Figure representing average distribution overtime.
+    """
+    # Calculate the length of each review
     df['year'] = df['datetime'].dt.year
     df['quarter'] = df['datetime'].dt.quarter
 
@@ -152,20 +90,24 @@ def average_rating_overtime(df):
 
 
 def average_rating_wrt_month_year(df):
+    """
+    Function to plot Bar Chart to visualize average rating
+    w.r.t Months for each year
+    :param df: The input DataFrame containing review data.
+    :return: A Plotly Figure representing average distribution overtime.
+    """
     df['year'] = df['datetime'].dt.year
-    df['month'] = df['datetime'].dt.month_name()
     df['month_num'] = df['datetime'].dt.month
     df['month_year'] = df['datetime'].dt.strftime("%b %Y")
 
     # Calculate average rating for each year and month
     avg_rating = df.groupby(['year', 'month_num', 'month_year'])['rating'].mean().reset_index()
 
-    # avg_rating
     # Create a Plotly go figure
     fig = go.Figure()
 
     years = sorted(list(avg_rating['year'].unique()))
-    # Add a bar trace for each quarter
+    # Add a bar trace for each month
     for year in years:
         year_data = avg_rating[avg_rating['year'] == year]
         year_data.sort_values(by='month_num', inplace=True)
@@ -184,7 +126,7 @@ def average_rating_wrt_month_year(df):
 
 def rating_breakdown_pie(df: pd.DataFrame) -> go.Figure:
     """
-    Generate a bar chart to visualize the breakdown of reviews by rating.
+    Generate a pie chart to visualize the breakdown of reviews by rating.
     :param df: The input DataFrame containing review data.
     :return: A Plotly Figure representing the breakdown of reviews by rating.
     """
@@ -210,6 +152,12 @@ def rating_breakdown_pie(df: pd.DataFrame) -> go.Figure:
 
 
 def sentiment_score_overtime(df):
+    """
+    Function to plot a scatter chart to visualize sentiment score
+    w.r.t time
+    :param df: The input DataFrame containing review data.
+    :return: A Plotly Figure representing sentiment score overtime.
+    """
     df = insert_sentiment_scores(df)
     fig = go.Figure()
     fig.add_trace(
@@ -230,6 +178,11 @@ def sentiment_score_overtime(df):
 
 
 def pharmacies_choropleth(df):
+    """
+    Function to plot map plot based on average rating w.r.t region
+    :param df: The input DataFrame containing review data.
+    :return: A Plotly Figure showing rating density per region.
+    """
     # LOAD geojson FILE
     with open("data/georef-switzerland-kanton.geojson") as response:
         geo = json.load(response)
@@ -266,11 +219,18 @@ def pharmacies_choropleth(df):
 
 
 def top_performing_places(df):
+    """
+    Function to plot Bar Chart to get top ranked pharmacies
+    :param df: The input DataFrame containing review data.
+    :return: A Plotly Figure representing top 30 pharmacies
+    based on reviews and ratings.
+    """
     df = df.dropna(subset=["averageRating"])
     df = df.groupby("name").agg({
         "averageRating": "mean",
         "totalReviews": "sum"
     }).reset_index()
+
     thresh = df["totalReviews"].mean()
     df = df[df["totalReviews"] >= thresh]
     df["rank"] = (df["averageRating"] / df["totalReviews"]) * 100
