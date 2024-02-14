@@ -14,4 +14,4 @@ textblob_fr
 textblob_de
 nltk
 sqlalchemy
-psycopg2
+psycopg2-binary
