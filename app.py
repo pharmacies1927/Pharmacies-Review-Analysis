@@ -9,6 +9,7 @@ from plots import reviews_wordcloud, average_rating_overtime, \
     average_rating_wrt_month_year
 from template.html import card_view, review_card
 from utils import pre_process_data, create_map, get_star_ratings
+from sqlalchemy import create_engine
 
 # ------------------------------ Page Configuration------------------------------
 st.set_page_config(page_title="Pharmacies Listings", page_icon="📊", layout="wide")
@@ -44,17 +45,33 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ----------------------------------- Data Loading ------------------------------
-conn = st.connection("gsheets", type=GSheetsConnection)
+# conn = st.connection("gsheets", type=GSheetsConnection)
+#
+# data = conn.read(worksheet="Pharmacies")
+# reviews_data = conn.read(worksheet="AllReviews")
+#
+# # data = pd.read_json("./data/Pharmacies.json")
+# # data = data.transpose()
+# # reviews_data = pd.read_json("./data/AllReviews.json")
+# # reviews_data = reviews_data.transpose()
+#
+# data, reviews_data = pre_process_data(data, reviews_data)
 
-data = conn.read(worksheet="Pharmacies")
-reviews_data = conn.read(worksheet="AllReviews")
+name = st.secrets['credentials']['database']
+end_point = st.secrets['credentials']['end_point']
+username = st.secrets['credentials']['username']
+password = st.secrets['credentials']['password']
+port = st.secrets['credentials']['port']
 
-# data = pd.read_json("./data/Pharmacies.json")
-# data = data.transpose()
-# reviews_data = pd.read_json("./data/AllReviews.json")
-# reviews_data = reviews_data.transpose()
 
-data, reviews_data = pre_process_data(data, reviews_data)
+db_url = f'postgresql://{username}:{password}@{end_point}:{port}/{name}'
+engine = create_engine(db_url)
+
+# Load data from the database into DataFrames
+pharmacies_df = pd.read_sql_table('Pharmacies', con=engine)
+reviews_df = pd.read_sql_table('Reviews', con=engine)
+
+data, reviews_data = pre_process_data(pharmacies_df, reviews_df)
 
 
 # ----------------------------------- Main App ----------------------------------
@@ -130,7 +147,7 @@ def list_view():
         stars = [5, 4, 3, 2, 1]
     if not reviews:  # if user selected 'All'
         reviews = data["adjustedReview"].unique()
-    if not city:  # IIf selected option is 'All'
+    if not city:  # If selected option is 'All'
         city = data["city"].unique()
 
     df = filter_data(stars, reviews, name, city)

@@ -13,3 +13,4 @@ textblob~=0.17.1
 textblob_fr
 textblob_de
 nltk
+sqlalchemy

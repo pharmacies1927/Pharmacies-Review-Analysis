@@ -41,10 +41,6 @@ def pre_process_listings_data(data: pd.DataFrame) -> pd.DataFrame:
     data["city"] = data["address"].apply(lambda x: x.split(', ')[-2].split(' ')[-1])
     data["adjustedReview"] = data["totalReviews"].apply(adjusted_reviews)
     data["adjustedRating"] = data["averageRating"].apply(lambda x: int(x // 1))
-    # # Create a new column 'ranking' based on the total number of reviews and average ratings
-    # data['rank'] = data['totalReviews'].rank(ascending=False, method='min') + \
-    #                data['averageRating'].rank(ascending=False, method='min')
-
     # Sort the DataFrame based on 'ranking'
     data.sort_values(by='totalReviews', inplace=True)
     data.reset_index(drop=True, inplace=True)
