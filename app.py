@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from streamlit_folium import folium_static
-# from streamlit_gsheets import GSheetsConnection
+from streamlit_gsheets import GSheetsConnection
 from streamlit_option_menu import option_menu
 
 from plots import reviews_wordcloud, average_rating_overtime, \
@@ -9,7 +9,7 @@ from plots import reviews_wordcloud, average_rating_overtime, \
     average_rating_wrt_month_year
 from template.html import card_view, review_card
 from utils import pre_process_data, create_map, get_star_ratings
-from sqlalchemy import create_engine
+# from sqlalchemy import create_engine
 
 # ------------------------------ Page Configuration------------------------------
 st.set_page_config(page_title="Pharmacies Listings", page_icon="📊", layout="wide")
@@ -45,33 +45,29 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ----------------------------------- Data Loading ------------------------------
-# conn = st.connection("gsheets", type=GSheetsConnection)
-#
-# data = conn.read(worksheet="Pharmacies")
-# reviews_data = conn.read(worksheet="AllReviews")
-#
-# # data = pd.read_json("./data/Pharmacies.json")
-# # data = data.transpose()
-# # reviews_data = pd.read_json("./data/AllReviews.json")
-# # reviews_data = reviews_data.transpose()
-#
-# data, reviews_data = pre_process_data(data, reviews_data)
+conn = st.connection("gsheets", type=GSheetsConnection)
 
-name = st.secrets['credentials']['database']
-end_point = st.secrets['credentials']['end_point']
-username = st.secrets['credentials']['username']
-password = st.secrets['credentials']['password']
-port = st.secrets['credentials']['port']
+data = conn.read(worksheet="Pharmacies")
+reviews_data = conn.read(worksheet="AllReviews")
 
+# data = pd.read_json("./data/Pharmacies.json")
+# data = data.transpose()
+# reviews_data = pd.read_json("./data/AllReviews.json")
+# reviews_data = reviews_data.transpose()
 
-db_url = f'postgresql://{username}:{password}@{end_point}:{port}/{name}'
-engine = create_engine(db_url).connect()
+data, reviews_data = pre_process_data(data, reviews_data)
 
+# name = st.secrets['credentials']['database']
+# end_point = st.secrets['credentials']['end_point']
+# username = st.secrets['credentials']['username']
+# password = st.secrets['credentials']['password']
+# port = st.secrets['credentials']['port']
+# db_url = f'postgresql://{username}:{password}@{end_point}:{port}/{name}'
+# engine = create_engine(db_url).connect()
 # Load data from the database into DataFrames
-pharmacies_df = pd.read_sql_table('Pharmacies', con=engine)
-reviews_df = pd.read_sql_table('Reviews', con=engine)
-
-data, reviews_data = pre_process_data(pharmacies_df, reviews_df)
+# pharmacies_df = pd.read_sql_table('Pharmacies', con=engine)
+# reviews_df = pd.read_sql_table('Reviews', con=engine)
+# data, reviews_data = pre_process_data(pharmacies_df, reviews_df)
 
 
 # ----------------------------------- Main App ----------------------------------
